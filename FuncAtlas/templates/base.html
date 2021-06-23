@@ -1,0 +1,33 @@
+{% load static %}
+<!--use Bootstrap CSS and JS 5.0.1-->
+<!--https://getbootstrap.com/docs/5.0/getting-started/download/-->
+<!doctype html>
+<html lang="en-US">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link href="{% static 'bootstrap-5.0.1-dist/css/bootstrap.css' %}" rel="stylesheet">
+
+         <!-- Custom styles for this template -->
+        <link href="{% static 'css/sidebar.css' %}" rel="stylesheet">
+        <link href="{% static 'css/extras.css' %}" rel="stylesheet">
+
+        <title>{% block title %}NeuroSimulator{% endblock %}</title>
+    </head>
+
+    <body>
+
+    {% include 'navbar.html' %}
+
+        <div class="container-fluid">
+                {% block content %}
+                {% endblock %}
+        </div>
+
+        <!-- Use Bootstrap JS -->
+        <script src="{% static 'bootstrap-5.0.1-dist/js/bootstrap.bundle.min.js' %}"></script>
+    </body>
+</html>
