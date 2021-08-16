@@ -5,7 +5,7 @@
 {% block head_extras %}
     {{ block.super }}
     <link href="{% static 'vanillaSelectBox/vanillaSelectBox.css' %}" rel="stylesheet">
-    
+
     <style>
         .select-zone {
             display: block;
@@ -26,27 +26,27 @@
         <br>
         <div class="select-zone">
             <label>Select a neuron:</label>
-            <select id="oneNeuron">
+            <select id="one-neuron">
                 {% for neuron in neurons %}
                     <option value="{{ neuron.name }}">{{ neuron.name }}</option>
                 {% endfor %}
             </select>
         </div>
 
-	    <div class="select-zone">
+        <div class="select-zone">
             <label>Select one or more neuron(s):</label>
-            <select id="multiNeurons" multiple="" size="12" style="display: inline-block;">
+            <select id="multi-neurons" multiple="" size="12" style="display: inline-block;">
                 {% for neuron in neurons %}
                     <option value="{{ neuron.name }}">{{ neuron.name }}</option>
                 {% endfor %}
-            </select>        
+            </select>
         </div>
-    
-        <div><input type="button" class="btn btn-secondary" onclick="getSelectedValues()" 
+
+        <div><input type="button" class="btn btn-secondary" onclick="getSelectedValues()"
             value="Add selected neurons to parameter list"></div>
         <br>
         <div>
-        {% if form %} 
+        {% if form %}
             <form action="" method="POST" id="form">
                 {% csrf_token %}
                 {% for field in form %}
@@ -54,18 +54,18 @@
                         <label>{{ field.label }}</label>
                         {{ field }}
                         {% if field.help_text %}
-	                        <small class="form-text">{{ field.help_text }}</small>
+                            <small class="form-text">{{ field.help_text }}</small>
                         {% endif %}
                     </div>
                 {% endfor %}
-                <br> 
-                <input type="submit" value="Verify and output selected parameters (will be replaced by a button for plot)" class="btn btn-lg btn-info"> 
+                <br>
+                <input type="submit" value="Verify and output selected parameters (will be replaced by a button for plot)" class="btn btn-lg btn-info">
             </form>
-        {% endif %}   
+        {% endif %}
         </div>
-    
+
         <div>
-        {% if params %} 
+        {% if params %}
             <h5>Parameters after passing validations:</h5>
             <p>stim_neuron_id: {{ params.stim_neuron }}</p>
             <p>resp_neuron_ids: {{ params.resp_neurons }}</p>
@@ -82,32 +82,32 @@
     {{ block.super }}
     <script src="{% static 'js/vanillaSelectBox_mod.js' %}"></script>
     <script>
-	
-        let selectOneNeuron = new vanillaSelectBox("#oneNeuron",{ 
+
+        let selectOneNeuron = new vanillaSelectBox("#one-neuron",{
             "maxHeight": 150,
             "search": true,
             "placeHolder": "Select or type to search a neuron",
             translations: { "all": "All", "items": "Neurons" }
         });
-    
-        let selectMultiNeurons = new vanillaSelectBox("#multiNeurons",{
-            "maxOptionWidth":120, 
+
+        let selectMultiNeurons = new vanillaSelectBox("#multi-neurons",{
+            "maxOptionWidth":120,
             "maxHeight": 200,
             "search": true,
             "placeHolder": "Select or type to search neurons",
-            translations: { "all": "All", "items": "Neurons", "selectAll":"Select All","clearAll":"Clear All"} 
+            translations: { "all": "All", "items": "Neurons", "selectAll":"Select All","clearAll":"Clear All"}
         });
 
         function getSelectedValues(){
-            let oneNeuronChoice = document.getElementById("oneNeuron").value;
-            id_stim_neuron.value= oneNeuronChoice;
+            let one-neuronChoice = document.getElementById("one-neuron").value;
+            id_stim_neuron.value= one-neuronChoice;
 
-            let options = document.getElementById('multiNeurons').selectedOptions;
+            let options = document.getElementById('multi-neurons').selectedOptions;
             let multiNeuronChoices = Array.from(options).map(({ value }) => value);
-            //console.log(multiNeuronChoices);        
+            //console.log(multiNeuronChoices);
             id_resp_neurons.value= multiNeuronChoices;
 
-            return { oneNeuronChoice, multiNeuronChoices }
+            return { one-neuronChoice, multiNeuronChoices }
         }
 
     </script>
