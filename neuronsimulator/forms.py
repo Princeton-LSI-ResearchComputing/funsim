@@ -1,7 +1,6 @@
 from django import forms
 
 # from django.core.exceptions import ValidationError
-from neuronsimulator.models import Neuron
 
 
 class ParamForm(forms.Form):
@@ -9,8 +8,7 @@ class ParamForm(forms.Form):
         max_length=10, widget=forms.TextInput, label="stim_neu_id"
     )
     resp_neurons = forms.CharField(
-        max_length=3000, widget=forms.Textarea(attrs={'rows':3}), 
-        label="resp_neu_ids"
+        max_length=3000, widget=forms.Textarea(attrs={"rows": 3}), label="resp_neu_ids"
     )
     nt = forms.IntegerField(initial=1000, label="nt", help_text="Number of time points")
     dt = forms.DecimalField(initial=0.1, label="dt", help_text="Time step")
