@@ -85,7 +85,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "neurodb.sqlite3",
+        "NAME": BASE_DIR / "neurondb.sqlite3",
     }
 }
 

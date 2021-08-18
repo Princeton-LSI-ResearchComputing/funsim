@@ -12,8 +12,8 @@
         <link href="{% static 'bootstrap-5.0.1-dist/css/bootstrap.css' %}" rel="stylesheet">
 
          <!-- Custom styles for this template -->
-        <link href="{% static 'css/sidebar.css' %}" rel="stylesheet">
-        <link href="{% static 'css/extras.css' %}" rel="stylesheet">
+        {% block head_extras %}
+        {% endblock %}
 
         <title>{% block title %}Neuron Simulator{% endblock %}</title>
     </head>
@@ -29,5 +29,8 @@
 
         <!-- Use Bootstrap JS -->
         <script src="{% static 'bootstrap-5.0.1-dist/js/bootstrap.bundle.min.js' %}"></script>
+        <!-- additional JS -->
+        {% block js_extras %}
+        {% endblock %}
     </body>
 </html>
