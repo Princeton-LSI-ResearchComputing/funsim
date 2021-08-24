@@ -11,6 +11,10 @@ jobs:
       SECRET_KEY: u9hw)&vt)bqb$7=8q7pb^m6tl696nm0rww$wdf9v0!j(r!4rzf
     steps:
     - uses: actions/checkout@v1
+    - name: webfactory/ssh-agent
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
