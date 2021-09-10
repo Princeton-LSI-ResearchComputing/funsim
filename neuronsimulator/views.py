@@ -58,7 +58,7 @@ def plot_neural_responses(request):
         # Get stimulus
         try:
             stim = funatlas.get_standard_stimulus(
-                nt, dt, stim_type=stim_type, duration=dur
+                nt, dt=dt, stim_type=stim_type, duration=dur
             )
         except Exception as e:
             raise ValueError("Got error with get_standard_stimulus:", e)
@@ -67,7 +67,9 @@ def plot_neural_responses(request):
 
         # Get responses
         try:
-            resp = funatlas.get_responses(stim, dt, stim_neu_id, resp_neu_ids)
+            resp = funatlas.get_responses(
+                stim, dt, stim_neu_id, resp_neu_ids=resp_neu_ids
+            )
         except Exception as e:
             raise ValueError("Got error with getting output from get_responses", e)
 
