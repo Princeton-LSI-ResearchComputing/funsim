@@ -16,10 +16,8 @@
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
             </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="dropdown-list-data" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Run Program
-                </a>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'plot_neural_responses' %}">Run Program</a>
             </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="dropdown-download-data" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -35,11 +33,5 @@
                 </a>
             </li>
         </ul>
-
-        <form class="d-flex">
-            <input class="form-control me-2" type="search" placeholder="Text Search" aria-label="Search">
-            <button class="btn btn-outline-success" type="submit">Search</button>
-        </form>
-
     </div>
 </nav>
