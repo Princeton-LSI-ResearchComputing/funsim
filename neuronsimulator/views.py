@@ -109,8 +109,20 @@ def plot_neural_responses(request):
             "width": 640,
         }
 
-        # Getting HTML needed to render the plot.
-        plot_div = plot({"data": graphs, "layout": layout}, output_type="div")
+        """
+        Getting HTML needed to render the plot
+        ref: https://github.com/plotly/plotly.py/blob/master/packages/python/plotly/plotly/offline/offline.py
+        Notes:
+            plotly.offline.plot function has following arguments set to True as default:
+            validate (default=True): validate that all of the keys in the figure are valid
+            include_plotlyjs (default=True):
+                a script tag containing the plotly.js source code (~3MB) is included in the output.
+        plot_div should have passed validations if no error raised
+        """
+        try:
+            plot_div = plot({"data": graphs, "layout": layout}, output_type="div")
+        except Exception as e:
+            raise ValueError("Got error with html output for plot_div", e)
 
         context = {
             "neurons": neurons,
