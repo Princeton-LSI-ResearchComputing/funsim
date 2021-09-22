@@ -50,16 +50,14 @@ class NeuronInputParamForm(forms.Form):
             resp_neu_arr = cleaned_data.get("resp_neu_ids").split(",")
             if stim_neu_id in resp_neu_arr:
                 raise forms.ValidationError(
-                    "Response neuron(s) included stimulated neuron, please re-select!"
+                    "Response neuron(s) cannot include stimulated neuron, please make a different selection."
                 )
 
         # t_max should be larger than dur
         t_max = float(cleaned_data.get("t_max"))
         dur = float(cleaned_data.get("dur"))
         if t_max < dur:
-            raise forms.ValidationError(
-                "t_max value need to be larger than dur, please re-select!"
-            )
+            raise forms.ValidationError("t_max must be larger than dur.")
 
     def clean_stim_neu_id(self):
         neurons = Neuron.objects.values_list("name", flat=True).all()
@@ -77,17 +75,20 @@ class NeuronInputParamForm(forms.Form):
         but require at least one resp neuron at this stage of test
         will deal with this case later: resp_neu_ids=None and use a threshold value
         """
-        if resp_neu_ids is None:
+        if len(resp_neu_ids) == 0:
             raise forms.ValidationError(
-                "need to select at least one response neuron (for testing!)"
+                "You must select at least one response neuron (for testing)."
             )
         else:
             resp_neu_arr = resp_neu_ids.split(",")
+            invalid_neurons = []
             for resp_neuron in resp_neu_arr:
                 if resp_neuron not in neurons:
-                    raise forms.ValidationError(
-                        "found invalid neuron in response neuron list, please re-select!"
-                    )
+                    invalid_neurons.append(resp_neuron)
+            if len(invalid_neurons) > 0:
+                raise forms.ValidationError(
+                    f"Invalid response neuron(s) encountered: [{', '.join(invalid_neurons)}]"
+                )
         return resp_neu_ids
 
 
