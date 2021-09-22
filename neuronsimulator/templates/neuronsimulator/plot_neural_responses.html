@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Neuron Responses{% endblock %}
+
+{% block head_extras %}
+    {{ block.super }}
+    <link href="{% static 'vanillaSelectBox/vanillaSelectBox.css' %}" rel="stylesheet">
+
+    <style>
+        .select-zone {
+            display: block;
+            width: 100%;
+            min-height: 200px;
+        }
+        label {
+            display: inline-block;
+            min-width: 300px;
+            width: 300px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-6">
+            <h5>Select or enter input parameters for plotting neural responses:</h5>   
+            <br>
+            <div class="select-zone">
+                <label>Select a stimulated neuron:</label>
+                <select id="one-neuron">
+                    {% for neuron in neurons %}
+                        <option value="{{ neuron.name }}">{{ neuron.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="select-zone">
+                <label>Select one or more neuron(s) for calculating responses:</label>
+                <select id="multi-neurons" multiple="" size="12" style="display: inline-block;">
+                    {% for neuron in neurons %}
+                        <option value="{{ neuron.name }}">{{ neuron.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <br>
+            <div>
+            {% if form %}
+                <form action="" method="POST" id="form" onsubmit="getSelectedValues()">
+                    {% csrf_token %}
+                    <!--handle errors-->
+                    {% if form.errors %}
+                        <!--non-field errors-->
+                        {% for error in form.non_field_errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!--hidden fields-->
+                    {% for hidden_field in form.hidden_fields %}
+                        {% if hidden_field.errors %}
+                            <div class="alert alert-danger">{{ hidden_field.errors }}</div>
+                        {% endif %}
+                        {{ hidden_field }}
+                    {% endfor %}
+                    <!--non-hidden fields-->
+                    {% for field in form.visible_fields %}
+                        <div class="form-control">
+                            <label>{{ field.label }}</label>
+                            {% if field.errors %}
+                                <div class="alert alert-danger">{{ field.errors }}</div>
+                            {% endif %}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small class="form-text">{{ field.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <br>
+                    <input type="submit" value="Validate Parameters and Plot" class="btn btn-lg btn-primary">
+                </form>
+            {% endif %}
+            </div>   
+        </div>
+
+        <div class="col-6">
+            <div>
+            {% if params %} 
+                <h5>Output:</h5> 
+                <h5>parameters used for plotting the graph:</h5>
+                {% for key, value in params.items %}
+                    <p>{{ key }}: {{ value }} </p>
+                {% endfor %}
+            {% endif %}
+            </div>
+
+            <div>
+                {% if  plot_div %} 
+                    {% autoescape off %}
+                        {{ plot_div }}
+                    {% endautoescape %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js_extras %}
+    {{ block.super }}
+    <script src="{% static 'vanillaSelectBox/vanillaSelectBox_mod.js' %}"></script>
+    <script>
+
+        let selectOneNeuron = new vanillaSelectBox("#one-neuron",{ 
+            "maxHeight": 150,
+            "search": true,
+            "placeHolder": "Select or type to search a neuron",
+            translations: { "all": "All", "items": "Neurons" }
+        });
+    
+        let selectMultiNeurons = new vanillaSelectBox("#multi-neurons",{
+            "maxOptionWidth":120, 
+            "maxHeight": 200,
+            "search": true,
+            "placeHolder": "Select or type to search neurons",
+            translations: { "all": "All", "items": "Neurons", "selectAll":"Select All","clearAll":"Clear All"}
+        });
+
+        function getSelectedValues(){
+            let oneNeuronChoice = document.getElementById("one-neuron").value;
+            id_stim_neu_id.value= oneNeuronChoice;
+
+            let options = document.getElementById("multi-neurons").selectedOptions;
+            let multiNeuronsChoices = Array.from(options).map(({ value }) => value);
+            //console.log(multi-neuronsChoices);
+            id_resp_neu_ids.value= multiNeuronsChoices;
+
+            return { oneNeuronChoice, multiNeuronsChoices }
+        }
+
+    </script>
+{% endblock %}
