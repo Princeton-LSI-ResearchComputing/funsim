@@ -81,10 +81,7 @@ class NeuronInputParamForm(forms.Form):
             )
         else:
             resp_neu_arr = resp_neu_ids.split(",")
-            invalid_neurons = []
-            for resp_neuron in resp_neu_arr:
-                if resp_neuron not in neurons:
-                    invalid_neurons.append(resp_neuron)
+            invalid_neurons = [i for i in resp_neu_arr if i not in neurons]
             if len(invalid_neurons) > 0:
                 raise forms.ValidationError(
                     f"Invalid response neuron(s) encountered: [{', '.join(invalid_neurons)}]"
