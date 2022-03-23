@@ -1,22 +1,18 @@
 import os
 import re
+from urllib.parse import urlencode
 
 import numpy as np
 import plotly.graph_objects as go
-import wormfunconn as wfc
 from django.conf import settings
-
-from urllib.parse import urlencode
-from urllib.parse import urlparse
-
-from neuronsimulator.models import Neuron
 from plotly.offline import plot
 from wormfunconn import FunctionalAtlas
 
+
 class WormfunconnToPlot:
     """
-    contains a set of methods for calling wormfuconn package to generate parameters, 
-    plot, and url for displaying neural response plot(s) on the webpage
+    contains a set of methods for calling wormfuconn package to generate parameters plot,
+    and url for displaying neural response plot(s) on the webpage
     capture error in each step and then log it to a dictionary (app_error_dict) in output
     """
 
@@ -35,12 +31,12 @@ class WormfunconnToPlot:
             funatlas = None
             app_error_dict["atlas_file_error"] = "Input Atlas file was not found"
         return funatlas, app_error_dict
-    
+
     @staticmethod
     def t_max_to_dt(t_max, nt):
         dt = t_max / nt
         return dt
-    
+
     @staticmethod
     def dt_to_t_max(dt, nt):
         t_max = dt * nt
@@ -49,7 +45,7 @@ class WormfunconnToPlot:
     @staticmethod
     def resp_labels_to_dict(labels):
         """
-        The labels returned from get_responses is np.array 
+        The labels returned from get_responses is np.array
         the label format: resp_neu_ids (rank)
         e.g.
         array(['AIZR (0)', 'DD6 (1)', 'AINL (2)', 'DVB (3)']
@@ -69,7 +65,14 @@ class WormfunconnToPlot:
         For a stim_type, get kwargs required by FunctionalAtlas.get_standard_stimulus method
         """
         # shared kwargs for all stim_types
-        reqd_params_keys = ["stim_type", "stim_neu_id", "resp_neu_ids", "nt", "t_max", "top_n"]
+        reqd_params_keys = [
+            "stim_type",
+            "stim_neu_id",
+            "resp_neu_ids",
+            "nt",
+            "t_max",
+            "top_n",
+        ]
         # add other keys based on stim_type
         stim_kwargs = FunctionalAtlas.get_standard_stim_kwargs(input_stim_type)
         for i in range(len(stim_kwargs)):
@@ -78,7 +81,7 @@ class WormfunconnToPlot:
 
     def get_reqd_params_dict(self, params_dict):
         """
-        params_dict: 
+        params_dict:
             expect to get from request with POST or GET method
             The form contains parameters for all stim_type, though only display required fields based on stim_type
         output:
@@ -89,10 +92,9 @@ class WormfunconnToPlot:
         # set default values
         reqd_params_dict = {}
         app_error_dict = {}
-        
+
         # input need to be a dictionary
-        if (type(params_dict) is dict):
-            all_params_keys = params_dict.keys()
+        if type(params_dict) is dict:
             # verify stim_type
             stim_type = params_dict["stim_type"]
             exp_stim_type_list = ["rectangular", "delta", "sinusoidal", "realistic"]
@@ -100,11 +102,13 @@ class WormfunconnToPlot:
                 reqd_params_keys = self.get_reqd_params_keys(stim_type)
                 reqd_params_dict = {key: params_dict[key] for key in reqd_params_keys}
             else:
-                app_error_dict["input_parameter_error"] = f"undefined stim_type:{stim_type}."
+                app_error_dict[
+                    "input_parameter_error"
+                ] = f"undefined stim_type:{stim_type}."
         else:
             app_error_dict["input_parameter_error"] = "input is not a dictionary."
         return reqd_params_dict, app_error_dict
-    
+
     def get_resp_in_ndarray(self, params_dict):
         self.params_dict = params_dict
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
@@ -147,7 +151,11 @@ class WormfunconnToPlot:
                         frequency = float(reqd_params_dict["frequency"])
                         phi0 = float(reqd_params_dict["phi0"])
                         stim = funatlas.get_standard_stimulus(
-                            nt, dt=dt, stim_type=stim_type, frequency=frequency, phi0=phi0
+                            nt,
+                            dt=dt,
+                            stim_type=stim_type,
+                            frequency=frequency,
+                            phi0=phi0,
                         )
                     elif stim_type == "realistic":
                         tau1 = float(reqd_params_dict["tau1"])
@@ -163,8 +171,13 @@ class WormfunconnToPlot:
         try:
             if stim.size > 0:
                 resp, labels, msg = funatlas.get_responses(
-                    stim, dt, stim_neu_id, resp_neu_ids=resp_neu_ids, threshold=0.0, top_n=top_n
-                )  
+                    stim,
+                    dt,
+                    stim_neu_id,
+                    resp_neu_ids=resp_neu_ids,
+                    threshold=0.0,
+                    top_n=top_n,
+                )
             elif stim.size == 0:
                 resp = np.empty(0)
                 labels = []
@@ -201,16 +214,16 @@ class WormfunconnToPlot:
         ref: https://albertrtk.github.io/2021/01/24/Graph-on-a-web-page-with-Plotly-and-Django.html
         """
         self.params_dict = params_dict
-        
+
         # get response related output
         resp, labels, msg, app_error_dict = self.get_resp_in_ndarray(params_dict)
 
         # default value
         plot_div = None
         resp_msg = None
-        if msg is not None and msg !="":
+        if msg is not None and msg != "":
             resp_msg = "Notes:\n" + msg
-        
+
         if resp.size > 0:
             stim_neu_id = params_dict["stim_neu_id"]
             # transposed array for response datasets
@@ -222,7 +235,11 @@ class WormfunconnToPlot:
                 y_data = y_data_set[..., i]
                 # adding scatter plot of each set of y_data vs. x_data
                 graphs.append(
-                    go.Scatter(x=x_data, y=y_data, mode="lines", name=labels[i],    
+                    go.Scatter(
+                        x=x_data,
+                        y=y_data,
+                        mode="lines",
+                        name=labels[i],
                     )
                 )
 
@@ -261,7 +278,9 @@ class WormfunconnToPlot:
         self.reqd_params_dict = params_dict
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         if reqd_params_dict:
-            filtered_params_dict = { k:v for (k,v) in reqd_params_dict.items() if v is not None }
+            filtered_params_dict = {
+                k: v for (k, v) in reqd_params_dict.items() if v is not None
+            }
             try:
                 url_query_string = urlencode(filtered_params_dict, doseq=True)
             except Exception as e:
@@ -293,8 +312,9 @@ class WormfunconnToPlot:
 
         # get code snippet
         try:
-            code_snippet = FunctionalAtlas.get_code_snippet(nt,dt,stim_type,stim_kwargs,stim_neu_id,resp_neu_ids)
+            code_snippet = FunctionalAtlas.get_code_snippet(
+                nt, dt, stim_type, stim_kwargs, stim_neu_id, resp_neu_ids
+            )
         except Exception as e:
-                app_error_dict["plot_code_snippet_error"] = e
+            app_error_dict["plot_code_snippet_error"] = e
         return code_snippet, app_error_dict
-

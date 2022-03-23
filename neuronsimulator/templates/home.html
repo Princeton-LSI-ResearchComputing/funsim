@@ -214,7 +214,11 @@
                 <div id="div_top_n" onchange="setRespNeuIDsToNone()">
                     <label>{{ form.top_n.label }}</label>
                     {{ form.top_n.errors }}
-                    {{ form.top_n }}
+                    {{ form.top_n }}&nbsp;&nbsp;
+                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_top_n_helptext"></i>
+                    <div class="collapse" id="id_top_n_helptext">
+                        <div class="card card-body">{{ form.top_n.help_text }}</div>
+                    </div>
                 </div>
                 <br>
                 <div id="div_t_max" class="form-control" style="display:block">

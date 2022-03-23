@@ -1,14 +1,9 @@
-import json
-import plotly.graph_objects as go
 import wormfunconn as wfc
-
 from django.shortcuts import render
 from django.urls import reverse
-
 from neuronsimulator.forms import ParamForm
 from neuronsimulator.models import Neuron
 from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
-from plotly.offline import plot
 
 
 def home(request):
@@ -21,7 +16,7 @@ def home(request):
     resp_msg = ""
     url_for_plot = ""
     code_snippet = ""
-    app_errors = {}
+    app_error_dict = {}
 
     # website introduction
     web_intro = wfc.website_text["intro"]
@@ -30,7 +25,7 @@ def home(request):
     neurons = Neuron.objects.all()
 
     # get form initial values
-    my_form = ParamForm()  
+    my_form = ParamForm()
     for k in my_form.fields.keys():
         form_init_dict[k] = my_form[k].initial
 
@@ -81,7 +76,7 @@ def home(request):
             "form": my_form,
             "form_init_dict": form_init_dict,
             "form_errors": form_errors,
-            "app_errors": app_error_dict,
+            "app_error_dict": app_error_dict,
             "resp_msg": resp_msg,
             "plot_div": plot_div,
             "url_for_plot": url_for_plot,
@@ -97,5 +92,5 @@ def home(request):
             "form_init_dict": form_init_dict,
             "form_errors": form_errors,
         }
-    
+
     return render(request, "home.html", context)

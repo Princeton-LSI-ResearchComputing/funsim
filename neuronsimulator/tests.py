@@ -108,7 +108,7 @@ class ViewTests(TestCase):
         self.assertEqual(resp.shape[1], 1000)
         self.assertEqual(len(labels), 4)
         self.assertEqual(app_error_dict, {})
-  
+
     def test_get_url_to_params(self):
         valid_data_set = self.valid_data_set()
         reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
@@ -130,5 +130,6 @@ class ViewTests(TestCase):
         )
         self.assertEqual(int(url_param_dict["nt"][0]), valid_data_set["nt"])
         self.assertEqual(float(url_param_dict["t_max"][0]), valid_data_set["t_max"])
-        self.assertEqual(float(url_param_dict["duration"][0]), valid_data_set["duration"])
-
+        self.assertEqual(
+            float(url_param_dict["duration"][0]), valid_data_set["duration"]
+        )

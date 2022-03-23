@@ -2,23 +2,25 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 from neuronsimulator.models import Neuron
 
-STIM_TYPE_CHOICES = (
-    ("rectangular", "rectangular"),
-    ("delta", "delta"),
-    ("sinusoidal", "sinusoidal"),
-    ("realistic", "realistic"),
-)
-
-STRAIN_CHOICES = (
-    ("wild type", "wild type"),
-    ("mutant1", "mutant1"),
-)
-
 
 class ParamForm(forms.Form):
-    def _neuron_choices():
-        queryset = Neuron.objects.all()
-        return [(c, c) for c in queryset.values_list("name", flat=True)]
+    STIM_TYPE_CHOICES = [
+        ("rectangular", "rectangular"),
+        ("delta", "delta"),
+        ("sinusoidal", "sinusoidal"),
+        ("realistic", "realistic"),
+    ]
+
+    STRAIN_CHOICES = [
+        ("wild type", "wild type"),
+        ("mutant1", "mutant1"),
+    ]
+
+    NEURON_CHOICES = [
+        (c, c) for c in Neuron.objects.all().values_list("name", flat=True)
+    ]
+
+    TOTOL_NEURON_COUNT = Neuron.objects.all().count()
 
     stim_type = forms.ChoiceField(
         choices=STIM_TYPE_CHOICES,
@@ -27,19 +29,19 @@ class ParamForm(forms.Form):
         widget=forms.Select,
     )
     stim_neu_id = forms.ChoiceField(
-        choices=_neuron_choices,
+        choices=NEURON_CHOICES,
         initial="ADAL",
         label="Stimulated neuron",
-        widget =forms.Select(
+        widget=forms.Select(
             attrs={
                 "class": "selectpicker",
                 "data-live-search": "true",
                 "data-width": "fit",
             }
-        ),      
+        ),
     )
     resp_neu_ids = forms.MultipleChoiceField(
-        choices=_neuron_choices,
+        choices=NEURON_CHOICES,
         label="Responding neurons",
         required=False,
         widget=forms.SelectMultiple(
@@ -47,7 +49,7 @@ class ParamForm(forms.Form):
                 "class": "selectpicker",
                 "data-live-search": "true",
                 "data-width": "fit",
-                "data-actions-box": "true"
+                "data-actions-box": "true",
             }
         ),
     )
@@ -55,14 +57,14 @@ class ParamForm(forms.Form):
         initial=0,
         label="Top N Responses",
         required=False,
-        help_text="If not None, return top_n responses with the the largest absolute peak amplitude",
-        widget=forms.NumberInput(attrs={"min": 0}),
+        help_text="If not None, return top N responses with the largest absolute peak amplitude",
+        widget=forms.NumberInput(attrs={"max": TOTOL_NEURON_COUNT, "min": 0}),
     )
     nt = forms.IntegerField(
         initial=1000,
         label="Number of time points",
         validators=[MinValueValidator(1)],
-        widget=forms.HiddenInput(attrs={'min': 1}),
+        widget=forms.HiddenInput(attrs={"min": 1}),
     )
     duration = forms.FloatField(
         initial=1.0,
@@ -116,4 +118,4 @@ class ParamForm(forms.Form):
         top_n = cleaned_data["top_n"]
         # check top_n value
         if top_n is not None and top_n < 0:
-            raise forms.ValidationError(f"Negative value is not allowed for Top_n.")
+            raise forms.ValidationError("Negative value is not allowed for Top_n.")
