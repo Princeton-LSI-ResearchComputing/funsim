@@ -36,8 +36,10 @@ def home(request):
         input_params_dict = dict(request.GET)
         # value in list type, convert to string except for resp_neu_ids
         for key, value in input_params_dict.items():
-            if key != "resp_neu_ids":
+            if key != "resp_neu_ids" and value != ["None"]:
                 input_params_dict.update({key: str(value[0])})
+            elif value == ["None"]:
+                input_params_dict[key] = None
         # merge to get all form fields, input_params_dict have priority in terms of values
         form_data_dict = {**form_init_dict, **input_params_dict}
         my_form = ParamForm(form_data_dict)

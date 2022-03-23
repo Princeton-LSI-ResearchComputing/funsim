@@ -112,10 +112,3 @@ class ParamForm(forms.Form):
         label="Type of strain",
         initial="wild type",
     )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        top_n = cleaned_data["top_n"]
-        # check top_n value
-        if top_n is not None and top_n < 0:
-            raise forms.ValidationError("Negative value is not allowed for Top_n.")
