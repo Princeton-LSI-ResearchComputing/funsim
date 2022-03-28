@@ -79,13 +79,6 @@ class ViewTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertTrue(form.errors["stim_neu_id"] is not None)
 
-        # case 2: set frequency value greater than maximum allowed
-        invalid_data_set2 = valid_data_set.copy()
-        invalid_data_set2["frequency"] = 0.3
-        form = ParamForm(data=invalid_data_set2)
-        self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["frequency"] is not None)
-
     def test_reqd_params_keys(self):
         valid_data_set = self.valid_data_set()
         reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
@@ -133,3 +126,14 @@ class ViewTests(TestCase):
         self.assertEqual(
             float(url_param_dict["duration"][0]), valid_data_set["duration"]
         )
+
+    def test_get_stim_type_choice(self):
+        stim_type_choice = wfc2plot().get_stim_type_choice()
+        sel_choice = ("delta", "delta")
+        stim_type_choice = wfc2plot().get_stim_type_choice()
+        self.assertTrue(sel_choice in stim_type_choice)
+
+    def test_get_form_opt_field_dict(self):
+        form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
+        self.assertEqual(form_opt_field_dict["duration"]["stim_type"], "rectangular")
+        self.assertEqual(form_opt_field_dict["duration"]["default"], 1.0)
