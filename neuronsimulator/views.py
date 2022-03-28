@@ -2,7 +2,6 @@ import wormfunconn as wfc
 from django.shortcuts import render
 from django.urls import reverse
 from neuronsimulator.forms import ParamForm
-from neuronsimulator.models import Neuron
 from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
@@ -17,17 +16,25 @@ def home(request):
     url_for_plot = ""
     code_snippet = ""
     app_error_dict = {}
+    # form_opt_field_dict = {}
+    form_opt_field_init_dict = {}
 
     # website introduction
     web_intro = wfc.website_text["intro"]
 
-    # all neurons
-    neurons = Neuron.objects.all()
-
-    # get form initial values
+    # get initial values for all form fields
     my_form = ParamForm()
     for k in my_form.fields.keys():
         form_init_dict[k] = my_form[k].initial
+
+    # get initial values and associated stim_type for optional form fields
+    form_opt_field_dict = my_form.form_opt_field_dict
+    for k, v in form_opt_field_dict.items():
+        v2 = {k1: v1 for k1, v1 in v.items() if k1 in ["stim_type", "default"]}
+        form_opt_field_init_dict[k] = v2
+
+    # get the list of names for optional fields
+    opt_field_names = list(form_opt_field_dict.keys())
 
     # get form input from request
     if request.method == "POST":
@@ -76,7 +83,8 @@ def home(request):
         context = {
             "web_intro": web_intro,
             "form": my_form,
-            "form_init_dict": form_init_dict,
+            "form_opt_field_init_dict": form_opt_field_init_dict,
+            "opt_field_names": opt_field_names,
             "form_errors": form_errors,
             "app_error_dict": app_error_dict,
             "resp_msg": resp_msg,
@@ -89,9 +97,9 @@ def home(request):
         my_form = ParamForm(form_params)
         context = {
             "web_intro": web_intro,
-            "neurons": neurons,
             "form": my_form,
-            "form_init_dict": form_init_dict,
+            "form_opt_field_init_dict": form_opt_field_init_dict,
+            "opt_field_names": opt_field_names,
             "form_errors": form_errors,
         }
 

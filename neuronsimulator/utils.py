@@ -11,10 +11,77 @@ from wormfunconn import FunctionalAtlas
 
 class WormfunconnToPlot:
     """
-    contains a set of methods for calling wormfuconn package to generate parameters plot,
-    and url for displaying neural response plot(s) on the webpage
+    contains a set of methods for calling wormfuconn package to parse parameters and generate
+    url and plot(s) for displaying neural responses on the webpage
     capture error in each step and then log it to a dictionary (app_error_dict) in output
     """
+
+    @classmethod
+    def get_stim_type_list(cls):
+        """
+        get the list of stim_types defined by wormfunconn package
+        """
+        stim_type_list = ["rectangular", "delta", "sinusoidal", "realistic"]
+        return stim_type_list
+
+    @classmethod
+    def get_stim_type_choice(cls):
+        """
+        get stim type choices in the format required by Django form ChoiceField
+        """
+        stim_type_list = cls.get_stim_type_list()
+        stim_type_choices = []
+        for stim_type in stim_type_list:
+            stim_type_choices.append((stim_type, stim_type))
+        return stim_type_choices
+
+    @classmethod
+    def get_form_opt_field_dict(cls):
+        """
+        The method is used to get all attrs. of optional fields for the web form.
+        The field names are defined as kwargs in FunctionalAtlas.get_standard_stim_kwargs(stim_type)
+        method.
+        example:
+        stim_type=="sinusoidal":
+        kwargs = [{"name": "frequency", "type": "float", "default": 1.0,
+                        "label": "Frequency (Hz)", "range": [0.,0.25]},
+                       {"name": "phi0", "type": "float", "default": 0.0,
+                        "label": "Phase", "range": [0.,6.28]}]
+        """
+        stim_type_list = cls.get_stim_type_list()
+        stim_kwarg_dict = {}
+        form_opt_field_dict = {}
+        for stim_type in stim_type_list:
+            stim_kwarg_dict[stim_type] = FunctionalAtlas.get_standard_stim_kwargs(
+                stim_type
+            )
+
+        for stim_type, field_kwargs in stim_kwarg_dict.items():
+            for field_kwarg in field_kwargs:
+                # form_opt_field_dict: key is field_name; value is a list of field attrs
+                field_name = field_kwarg["name"]
+                field_attrs = field_kwarg
+                form_opt_field_dict[field_name] = field_attrs
+                # add more items to field_attrs which are used for rendering web form fields
+                field_attrs["stim_type"] = stim_type
+                label = field_kwarg["label"]
+                default_val = str(field_kwarg["default"])
+                range_val = str(field_kwarg["range"])
+                min_val = field_kwarg["range"][0]
+                max_val = field_kwarg["range"][1]
+                field_attrs[
+                    "help_text"
+                ] = f"Values for {label}: default={default_val}; range: {range_val}"
+                field_attrs["min_val"] = min_val
+                field_attrs["max_val"] = max_val
+                field_attrs["step"] = 1
+                if max_val is not None:
+                    if round(max_val) <= 10:
+                        field_attrs["step"] = 0.01
+                    elif round(max_val) > 10 and round(max_val) <= 100:
+                        field_attrs["step"] = 0.1
+
+        return form_opt_field_dict
 
     @classmethod
     def get_funatlas(cls):
@@ -188,7 +255,7 @@ class WormfunconnToPlot:
             labels = []
             msg = None
 
-        # if resp_neu_ids is None, the repsonses are for all neurons, need to filter based on top_n ranks
+        # if resp_neu_ids is None, the responses are for all neurons, need to filter based on top_n ranks
         if resp_neu_ids is None and (type(top_n) is int):
             resp = resp[:top_n]
             labels = labels[:top_n]
@@ -286,7 +353,6 @@ class WormfunconnToPlot:
                 url_query_string = urlencode(filtered_params_dict, doseq=True)
             """
             try:
-                print("reqd_params_dict:", reqd_params_dict)
                 url_query_string = urlencode(reqd_params_dict, doseq=True)
             except Exception as e:
                 app_error_dict["plot_url_error"] = e

@@ -10,8 +10,8 @@
         }
     </style>
 
-    <!--form initial values-->
-    {{ form_init_dict|json_script:"form_init_dict" }}
+    <!--form initial values for optional fields-->
+    {{ form_opt_field_init_dict|json_script:"form_opt_field_init_dict" }}
 
     <script>
         // Initialize Bootstrap Tooltips
@@ -20,60 +20,32 @@
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
 
-        function showHideFormFields() {
-            //get init values for form parameters
-            const form_init_dict = JSON.parse(document.getElementById('form_init_dict').textContent);
-            const duration_init_value = form_init_dict["duration"]
-            const frequency_init_value = form_init_dict["frequency"]
-            const phi0_init_value = form_init_dict["phi0"]
-            const tau1_init_value = form_init_dict["tau1"]
-            const tau2_init_value = form_init_dict["tau2"]
+        // get names and initial values for optional fields
+        var form_opt_field_init_dict = JSON.parse(document.getElementById('form_opt_field_init_dict').textContent);
 
+        function showField(field_name) {
+            let div_id = 'div_' +  field_name;   
+            document.getElementById(div_id).style.display='block';
+        }
+
+        function hideField(field_name) {
+            let div_id = 'div_' +  field_name;
+            document.getElementById(div_id).style.display='none';
+        }
+
+        function showHideFormFields() {
             // get value for stim_type
             let stim_type_value = document.getElementById("id_stim_type").value;
             let sel_option = document.getElementById("id_stim_type").selectedOptions;
 
-            // show or hide form fields based on stim_type, use inital values for fields with display=none
-            if ( stim_type_value  === 'rectangular') {
-                document.getElementById("div_duration").style.display='block';
-                document.getElementById("div_frequency").style.display='none';
-                document.getElementById("div_phi0").style.display='none';
-                document.getElementById("div_tau1").style.display='none';
-                document.getElementById("div_tau2").style.display='none';
-                document.getElementById("id_frequency").value =frequency_init_value;
-                document.getElementById("id_phi0").value =phi0_init_value;
-                document.getElementById("id_tau1").value =tau1_init_value;
-                document.getElementById("id_tau2").value =tau1_init_value;
-            } else if ( stim_type_value  === 'sinusoidal') {
-                document.getElementById("div_duration").style.display='none';
-                document.getElementById("div_frequency").style.display='block';
-                document.getElementById("div_phi0").style.display='block';
-                document.getElementById("div_tau1").style.display='none';
-                document.getElementById("div_tau2").style.display='none';
-                document.getElementById("id_duration").value=duration_init_value;
-                document.getElementById("id_tau1").value=tau1_init_value;
-                document.getElementById("id_tau2").value=tau1_init_value;
-            } else if ( stim_type_value  === 'realistic') {
-                document.getElementById("div_duration").style.display='none';
-                document.getElementById("div_frequency").style.display='none';
-                document.getElementById("div_phi0").style.display='none';
-                document.getElementById("div_tau1").style.display='block';
-                document.getElementById("div_tau2").style.display='block';
-                document.getElementById("id_duration").value=duration_init_value;
-                document.getElementById("id_frequency").value=frequency_init_value;
-                document.getElementById("id_phi0").value =0;
-            } else if ( stim_type_value  === 'delta') {
-                document.getElementById("div_duration").style.display='none';
-                document.getElementById("div_frequency").style.display='none';
-                document.getElementById("div_phi0").style.display='none';
-                document.getElementById("div_phi0").style.display='none';
-                document.getElementById("div_tau2").style.display='none';
-                document.getElementById("id_duration").value=duration_init_value;
-                document.getElementById("id_frequency").value=frequency_init_value;
-                document.getElementById("id_phi0").value=phi0_init_value;
-                document.getElementById("id_tau1").value=tau1_init_value;
-                document.getElementById("id_tau2").value=tau1_init_value;
+            Object.entries(form_opt_field_init_dict).forEach((entry) => {
+            let [field_name, field_attrs] = entry;
+            if ( field_attrs["stim_type"] === stim_type_value) {
+                showField(field_name);
+            } else {
+                hideField(field_name);
             }
+            });
         }
 
         document.addEventListener("DOMContentLoaded",function() {
@@ -86,8 +58,9 @@
         }
 
         function setTopNToNone() {
-            // set top_n to None if response neurons are selected
+            // set top_n to None
             document.getElementById("id_top_n").value = "";
+
         }
 
         function setRespNeuIDsToNone() {
@@ -139,51 +112,20 @@
                     {{ form.stim_type }}
                 </div>
                 <br>
-                <div id="div_duration" style="display:block" class="form-control">
-                    <label id="label_for_duration" for="duration">{{ form.duration.label }}</label>
-                    {{ form.duration.errors }}
-                    {{ form.duration }}&nbsp;&nbsp;
-                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_duration_helptext"></i>
-                    <div class="collapse" id="id_duration_helptext">
-                        <div class="card card-body">{{ form.duration.help_text }}</div>
-                    </div>
-                </div>
-                <div id="div_frequency" style="display:none" class="form-control">
-                    <label id="label_for_frequency" for="frequency">{{ form.frequency.label }}</label>
-                    {{ form.frequency.errors }}
-                    {{ form.frequency }}&nbsp;&nbsp;
-                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_frequency_helptext"></i>
-                    <div class="collapse" id="id_frequency_helptext">
-                        <div class="card card-body">{{ form.frequency.help_text }}</div>
-                    </div>
-                </div>
-                <div id="div_phi0" style="display:none" class="form-control">
-                    <label id="label_for_phi0" for="phi0">{{ form.phi0.label }}</label>
-                    {{ form.phi0.errors }}
-                    {{ form.phi0 }}&nbsp;&nbsp;
-                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_phi0_helptext"></i>
-                    <div class="collapse" id="id_phi0_helptext">
-                        <div class="card card-body">{{ form.phi0.help_text }}</div>
-                    </div>
-                </div>
-                <div id="div_tau1" style="display:none" class="form-control">
-                    <label id="label_for_tau1" for="tau1">{{ form.tau1.label }}</label>
-                    {{ form.tau1.errors }}
-                    {{ form.tau1 }}&nbsp;&nbsp;
-                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_tau1_helptext"></i>
-                    <div class="collapse" id="id_tau1_helptext">
-                        <div class="card card-body">{{ form.tau1.help_text }}</div>
-                    </div>
-                </div>
-                <div id="div_tau2" style="display:none" class="form-control">
-                    <label id="label_for_tau2" for="tau2">{{ form.tau2.label }}</label>
-                    {{ form.tau2.errors }}
-                    {{ form.tau2 }}&nbsp;&nbsp;
-                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_tau2_helptext"></i>
-                    <div class="collapse" id="id_tau2_helptext">
-                        <div class="card card-body">{{ form.tau2.help_text }}</div>
-                    </div>
-                </div>
+                <!-- optional fields-->
+                {% for field in form.visible_fields %}
+                    {% if field.name in opt_field_names %}
+                        <div id="div_{{ field.name }}" style="display:none" class="form-control">
+                            <label id="label_for_{{ field.name }}" for="{{ field.name }}">{{ field.label }}</label>
+                            {{ field.errors }}
+                            {{ field }} &nbsp;&nbsp;
+                            <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_{{ field.name }}_helptext"></i>
+                            <div class="collapse" id="id_{{ field.name }}_helptext">
+                                <div class="card card-body">{{ field.help_text }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
                 <!--Which Strain-->
                 <hr>
                 <div id="div_strain_type" style="display:block" class="form-control">
@@ -198,9 +140,9 @@
                 </p>
                     <div class="collapse" id="id_resp_helptext">
                         <div class="card card-body">
-                            <p>Select one or multiple response neurons will automatically deselect top N value. 
-                                Enter a value for top N will automatically deselect response neuron(s), and plot top N
-                                responses based on rank. The default value for Top N is 0. Unselect both response neurons and top N 
+                            <p>Selecting one or multiple response neurons will automatically deselect top N value. 
+                                Entering a value for top N will automatically deselect response neuron(s), and plot top N
+                                responses based on rank. The default value for Top N is 0. Unselecting both response neurons and top N 
                                 will plot responses based on default threshold value.
                             </p>
                         </div>
@@ -248,4 +190,3 @@
 </div>
 
 {% endblock %}
-

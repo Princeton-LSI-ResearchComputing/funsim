@@ -1,14 +1,22 @@
 from django import forms
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MinValueValidator
 from neuronsimulator.models import Neuron
+from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
 class ParamForm(forms.Form):
-    STIM_TYPE_CHOICES = [
-        ("rectangular", "rectangular"),
-        ("delta", "delta"),
-        ("sinusoidal", "sinusoidal"),
-        ("realistic", "realistic"),
+    """
+    This is a form class used for collecting parameters from POST or GET request to plot neural responses
+    """
+
+    stim_type_list = wfc2plot().get_stim_type_list()
+    stim_type_choices = wfc2plot().get_stim_type_choice()
+
+    form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
+
+    neuron_choices = [
+        (neu_id, neu_id)
+        for neu_id in Neuron.objects.all().values_list("name", flat=True)
     ]
 
     STRAIN_CHOICES = [
@@ -16,20 +24,14 @@ class ParamForm(forms.Form):
         ("mutant1", "mutant1"),
     ]
 
-    NEURON_CHOICES = [
-        (c, c) for c in Neuron.objects.all().values_list("name", flat=True)
-    ]
-
-    TOTOL_NEURON_COUNT = Neuron.objects.all().count()
-
     stim_type = forms.ChoiceField(
-        choices=STIM_TYPE_CHOICES,
+        choices=stim_type_choices,
         label="Type of standard stimulus",
         initial="rectangular",
         widget=forms.Select,
     )
     stim_neu_id = forms.ChoiceField(
-        choices=NEURON_CHOICES,
+        choices=neuron_choices,
         initial="ADAL",
         label="Stimulated neuron",
         widget=forms.Select(
@@ -41,7 +43,7 @@ class ParamForm(forms.Form):
         ),
     )
     resp_neu_ids = forms.MultipleChoiceField(
-        choices=NEURON_CHOICES,
+        choices=neuron_choices,
         label="Responding neurons",
         required=False,
         widget=forms.SelectMultiple(
@@ -58,48 +60,13 @@ class ParamForm(forms.Form):
         label="Top N Responses",
         required=False,
         help_text="If not None, return top N responses with the largest absolute peak amplitude",
-        widget=forms.NumberInput(attrs={"max": TOTOL_NEURON_COUNT, "min": 0}),
+        widget=forms.NumberInput(attrs={"max": len(neuron_choices), "min": 0}),
     )
     nt = forms.IntegerField(
         initial=1000,
         label="Number of time points",
         validators=[MinValueValidator(1)],
         widget=forms.HiddenInput(attrs={"min": 1}),
-    )
-    duration = forms.FloatField(
-        initial=1.0,
-        label="Duration (s)",
-        validators=[MinValueValidator(0)],
-        help_text="required parameter when stim_type is rectangular; minimum value is 0",
-        widget=forms.NumberInput(attrs={"step": 1, "min": 0.0}),
-    )
-    frequency = forms.FloatField(
-        initial=0.1,
-        label="Frequency (Hz)",
-        validators=[MinValueValidator(0), MaxValueValidator(0.25)],
-        help_text="required parameter when stim_type is sinusoidal; values ranging from 0 to 0.25",
-        widget=forms.NumberInput(attrs={"step": 0.01, "max": 0.25, "min": 0.0}),
-    )
-    phi0 = forms.FloatField(
-        initial=0.0,
-        label="Phase",
-        validators=[MinValueValidator(0), MaxValueValidator(6.28)],
-        help_text="required parameter when stim_type is sinusoidal; values ranging from 0 to 6.28",
-        widget=forms.NumberInput(attrs={"step": 0.01, "max": 6.28, "min": 0.0}),
-    )
-    tau1 = forms.FloatField(
-        initial=1.0,
-        label="Timescale 1 (s)",
-        validators=[MinValueValidator(0.5), MaxValueValidator(100)],
-        help_text="required parameter when stim_type is realistic; values ranging from 0.5 to 100",
-        widget=forms.NumberInput(attrs={"step": 0.1, "max": 100, "min": 0.5}),
-    )
-    tau2 = forms.FloatField(
-        initial=0.8,
-        label="Timescale 2 (s)",
-        validators=[MinValueValidator(0.5), MaxValueValidator(100)],
-        help_text="required parameter when stim_type is realistic; values ranging from 0.5 to 100",
-        widget=forms.NumberInput(attrs={"step": 0.1, "max": 100, "min": 0.5}),
     )
     t_max = forms.FloatField(
         initial=100,
@@ -112,3 +79,23 @@ class ParamForm(forms.Form):
         label="Type of strain",
         initial="wild type",
     )
+    # optional fields based on stim_types
+    duration = forms.FloatField()
+    frequency = forms.FloatField()
+    phi0 = forms.FloatField()
+    tau1 = forms.FloatField()
+    tau2 = forms.FloatField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # set attrs. for optional fields:
+        for field_name, field_attrs in self.form_opt_field_dict.items():
+            self.fields[field_name].label = field_attrs["label"]
+            self.fields[field_name].initial = field_attrs["default"]
+            self.fields[field_name].help_text = field_attrs["help_text"]
+            self.fields[field_name].widget.attrs["min"] = field_attrs["min_val"]
+            self.fields[field_name].widget.attrs["max"] = field_attrs["max_val"]
+            self.fields[field_name].widget.attrs["step"] = field_attrs["step"]
+            # found a bug in FunctionalAtlas.get_standard_stim_kwargs(stim_type)
+            # a workaround for current version
+            self.fields["frequency"].initial = 0.1
