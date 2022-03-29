@@ -1,0 +1,129 @@
+<div id="form_errors">
+    {% if form_errors %}
+        <h4 class="text-danger">Got form error, please make different selection and re-plot:</h4>
+        <div class="text-danger">
+        {% for key, value in form_errors.items %}
+            <li>{{ key |capfirst  }}: {{ value }}</li>
+        {% endfor %}
+        </div>
+    {% endif %}
+</div>
+<!--app errors-->
+<div id="app_errors">
+    {% if app_error_dict %}
+    <div class="text-danger">
+        <h4>Got following error(s), no plot was generated:</h4>
+        {% for key, value in app_errors.items %}
+            <li>{{ key |capfirst  }}: {{ value }}</li>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<div id="resp_msg">
+    <!--Webpage introduction -->
+    {% if resp_msg %}
+        <pre>{{ resp_msg }}</pre>
+    {% endif %}
+</div>
+
+{% if  plot_div %}
+<div id="div_plot">
+    {% autoescape off %}
+        {{ plot_div }}
+    {% endautoescape %}
+</div>
+<br>
+<div class="row">
+    <div id="div_code_snippet" class="col-6">
+    {% if code_snippet %}
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#id_sn" 
+            aria-expanded="false" aria-controls="id_sn">Code Snippet for the Plot
+    </button>
+        <div class="collapse" id="id_sn">
+            <div class="card card-body">
+                <div class="col-6 btn-group" role="group" aria-label="sn-buttons">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                        title="Copy to Clipboard"
+                        onclick="copyToClipboard('code_snippet')">Copy
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                        title="Save to file"
+                        onclick="downloadInnerText('code_snippet.py', 'code_text')">Save
+                    </button>
+                </div>
+                <div>
+                    <br>
+                </div>
+                <div id="code_snippet">
+                    {% if code_snippet %}
+                    <pre id="code_text">{{ code_snippet }}</pre>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    </div>
+    <div id="div_plot_url" class="col-6">
+    {% if url_for_plot %}
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#id_plot_url" 
+            aria-expanded="false" aria-controls="id_plot_url">
+        URL for Plot
+        </button>
+        <div class="collapse" id="id_plot_url">
+            <div class="card card-body">
+                <div class="col-6 btn-group" role="group" aria-label="params-buttons">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                        title="Copy to Clipboard"
+                        onclick="copyToClipboard('url_text')">Copy
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip" 
+                        title="Save to File"
+                        onclick="downloadInnerText('plot_url.txt', 'url_text')">Save URL
+                    </button>
+                </div>
+                <div>
+                    <br>
+                </div>
+                <div id="output-url">
+                <pre id="url_text">{{ url_for_plot }}</pre>
+                <p id="plot_link"><a href="{{ url_for_plot }}">Show plot with the above URL</a></p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!--JavaScript section-->
+<!--https://ekoopmans.github.io/html2pdf.js/-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js" 
+    integrity="sha512-YcsIPGdhPK4P/uRW6/sruonlYj+Q7UHWeKfTAkBW+g83NKM+jMJFJ4iAPfSnVp7BKD4dKMHmVSvICUbE/V1sSw==" 
+    crossorigin="anonymous" referrerpolicy="no-referrer">
+</script>
+
+<script>
+    // ref: https://www.arclab.com/en/kb/htmlcss/how-to-copy-text-from-html-element-to-clipboard.html
+    function copyToClipboard(id){
+        var r = document.createRange();
+        r.selectNode(document.getElementById(id));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+    }
+
+    // based on the following reference with modifications
+    //ref: https://stackoverflow.com/questions/22084698/how-to-export-source-content-within-div-to-text-html-file
+    function downloadInnerText(filename, elId, mimeType) {
+        var textToWrite = document.getElementById(elId).innerText;
+        var link = document.createElement('a');
+        mimeType = mimeType || 'text/plain';
+        
+        link.setAttribute('download', filename);
+        link.setAttribute('href', 'data:' + mimeType  +  ';charset=utf-8,' + encodeURIComponent(textToWrite));
+        link.click(); 
+    }
+
+</script>

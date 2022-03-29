@@ -1,170 +1,106 @@
-import os
-
-import numpy as np
-import plotly.graph_objects as go
 import wormfunconn as wfc
-from django.conf import settings
 from django.shortcuts import render
-from neuronsimulator.forms import NeuronInputParamForm, ParamForm
-from neuronsimulator.models import Neuron
-from plotly.offline import plot
+from django.urls import reverse
+from neuronsimulator.forms import ParamForm
+from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
 def home(request):
-    return render(request, "home.html")
-
-
-def plot_neural_responses(request):
-    context = {}
-    params = {}
-
-    # all neurons
-    neurons = Neuron.objects.all()
-
-    # form
-    my_form = NeuronInputParamForm(request.POST or None)
-
-    # context
-    context = {"neurons": neurons, "form": my_form}
-
-    if my_form.is_valid():
-        params = my_form.cleaned_data
-        # get input parameters for calling wormfunconn
-        stim_neu_id = params["stim_neu_id"]
-        resp_neu_ids = params["resp_neu_ids"]
-        resp_neu_ids = resp_neu_ids.split(",")
-        nt = int(params["nt"])
-        t_max = float(params["t_max"])
-        stim_type = params["stim_type"]
-        dur = float(params["dur"])
-
-        # print("stim_neu_id", stim_neu_id)
-        # print("resp_neu_ids", resp_neu_ids)
-
-        # Get atlas folder and file name
-        folder = os.path.join(settings.MEDIA_ROOT, "atlas/")
-        # use mock file for now, need get the file from the lab
-        fname = "mock.pickle"
-
-        # Create FunctionalAtlas instance from file
-        if os.path.isfile(os.path.join(folder, fname)):
-            funatlas = wfc.FunctionalAtlas.from_file(folder, fname)
-        else:
-            raise FileNotFoundError("Input Atlas file was not found")
-
-        # calculate dt from t_max and nt
-        dt = t_max / nt
-
-        # Get stimulus
-        try:
-            stim = funatlas.get_standard_stimulus(
-                nt, dt=dt, stim_type=stim_type, duration=dur
-            )
-        except Exception as e:
-            raise ValueError("Got error with get_standard_stimulus:", e)
-
-        # print("The size of stim ndarray is:", stim.size)
-
-        # Get responses
-        try:
-            resp = funatlas.get_responses(
-                stim, dt, stim_neu_id, resp_neu_ids=resp_neu_ids
-            )
-        except Exception as e:
-            raise ValueError("Got error with getting output from get_responses", e)
-
-        # print("The size of resp ndarray is :",resp.size)
-
-        # convert and verify values for plotting neural responses using plotly
-        # ref: https://plotly.com/python/line-charts/#line-plot-with-goscatter
-        # ref: https://albertrtk.github.io/2021/01/24/Graph-on-a-web-page-with-Plotly-and-Django.html
-        total_resp_neurons = len(resp_neu_ids)
-        total_resp_data_set = resp.T.shape[1]
-        # print("total_resp_neurons:", total_resp_neurons)
-        # print("total_resp_data_set:", total_resp_data_set)
-        if total_resp_data_set != total_resp_neurons:
-            raise ValueError(
-                "Total number mismatch: neural response datasets vs. response neurons"
-            )
-
-        # transposed array for response datasets
-        y_data_set = resp.T
-        x_data = np.arange(y_data_set.shape[0])
-
-        graphs = []
-        for i in range(total_resp_neurons):
-            # print(resp_neu_ids[i])
-            y_data = y_data_set[..., i]
-            # adding scatter plot of each set of y_data vs. x_data
-            graphs.append(
-                go.Scatter(x=x_data, y=y_data, mode="lines", name=resp_neu_ids[i])
-            )
-
-        # layout of the figure.
-        layout = {
-            "title": "Plot: Neural Responses to Stimulus",
-            "xaxis_title": "Time Point",
-            "yaxis_title": "Neural Response",
-            "height": 480,
-            "width": 640,
-        }
-
-        """
-        Getting HTML needed to render the plot
-        ref: https://github.com/plotly/plotly.py/blob/master/packages/python/plotly/plotly/offline/offline.py
-        Notes:
-            plotly.offline.plot function has following arguments set to True as default:
-            validate (default=True): validate that all of the keys in the figure are valid
-            include_plotlyjs (default=True):
-                a script tag containing the plotly.js source code (~3MB) is included in the output.
-        plot_div should have passed validations if no error raised
-        """
-        try:
-            plot_div = plot({"data": graphs, "layout": layout}, output_type="div")
-        except Exception as e:
-            raise ValueError("Got error with html output for plot_div", e)
-
-        context = {
-            "neurons": neurons,
-            "form": my_form,
-            "params": params,
-            "plot_div": plot_div,
-        }
-
-    return render(request, "neuronsimulator/plot_neural_responses.html", context)
-
-
-# keep list_input_params for now for comparing NeuronInputParamForm with ParamForm
-def list_input_params(request):
 
     context = {}
-    params = {}
+    form_init_dict = {}
+    form_params = {}
+    reqd_params_dict = {}
+    plot_div = {}
+    resp_msg = ""
+    url_for_plot = ""
+    code_snippet = ""
+    app_error_dict = {}
+    # form_opt_field_dict = {}
+    form_opt_field_init_dict = {}
 
-    # all neurons
-    neurons = Neuron.objects.all()
+    # website introduction
+    web_intro = wfc.website_text["intro"]
 
-    # form
+    # get initial values for all form fields
     my_form = ParamForm()
+    for k in my_form.fields.keys():
+        form_init_dict[k] = my_form[k].initial
+
+    # get initial values and associated stim_type for optional form fields
+    form_opt_field_dict = my_form.form_opt_field_dict
+    for k, v in form_opt_field_dict.items():
+        v2 = {k1: v1 for k1, v1 in v.items() if k1 in ["stim_type", "default"]}
+        form_opt_field_init_dict[k] = v2
+
+    # get the list of names for optional fields
+    opt_field_names = list(form_opt_field_dict.keys())
+
+    # get form input from request
     if request.method == "POST":
         my_form = ParamForm(request.POST)
-        # print(request.POST)
-        if my_form.is_valid():
-            stim_neuron = my_form.cleaned_data["stim_neuron"]
-            resp_neurons = my_form.cleaned_data["resp_neurons"]
-            nt = my_form.cleaned_data["nt"]
-            dt = my_form.cleaned_data["dt"]
-            stim_type = my_form.cleaned_data["stim_type"]
-            dur = my_form.cleaned_data["dur"]
+    elif request.method == "GET":
+        input_params_dict = dict(request.GET)
+        # value in list type, convert to string except for resp_neu_ids
+        for key, value in input_params_dict.items():
+            if key != "resp_neu_ids" and value != ["None"]:
+                input_params_dict.update({key: str(value[0])})
+            elif value == ["None"]:
+                input_params_dict[key] = None
+        # merge to get all form fields, input_params_dict have priority in terms of values
+        form_data_dict = {**form_init_dict, **input_params_dict}
+        my_form = ParamForm(form_data_dict)
 
-            # TODO: will add code for validations
-            params["stim_neuron"] = stim_neuron
-            params["resp_neurons"] = resp_neurons
-            params["nt"] = nt
-            params["dt"] = dt
-            params["stim_type"] = stim_type
-            params["dur"] = dur
-        else:
-            my_form = ParamForm()
+    # get form error dict
+    form_errors = my_form.errors.as_data
 
-    context = {"neurons": neurons, "form": my_form, "params": params}
-    return render(request, "neuronsimulator/list_input_params.html", context)
+    # get form valid input values
+    form_params = my_form.cleaned_data
+
+    if my_form.is_valid():
+        # call methods to get plot related output, and write error(s) to app_error_dict
+        # get required parameters and values first
+        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(form_params)
+        # get plot_div
+        plot_div, resp_msg, app_error_dict = wfc2plot().get_plot_html_div(
+            reqd_params_dict
+        )
+        # get url for plot
+        url_query_string, app_error_dict = wfc2plot().get_url_query_string_for_plot(
+            reqd_params_dict
+        )
+        url_for_plot = (
+            request.build_absolute_uri("/")[:-1]
+            + reverse("home")
+            + "?"
+            + url_query_string
+        )
+        # get code snippet for plot
+        code_snippet, app_error_dict = wfc2plot().get_code_snippet_for_plot(
+            reqd_params_dict
+        )
+        # add all output to context
+        context = {
+            "web_intro": web_intro,
+            "form": my_form,
+            "form_opt_field_init_dict": form_opt_field_init_dict,
+            "opt_field_names": opt_field_names,
+            "form_errors": form_errors,
+            "app_error_dict": app_error_dict,
+            "resp_msg": resp_msg,
+            "plot_div": plot_div,
+            "url_for_plot": url_for_plot,
+            "code_snippet": code_snippet,
+        }
+    else:
+        # for invalid form, render valid form values in addition to form error(s)
+        my_form = ParamForm(form_params)
+        context = {
+            "web_intro": web_intro,
+            "form": my_form,
+            "form_opt_field_init_dict": form_opt_field_init_dict,
+            "opt_field_names": opt_field_names,
+            "form_errors": form_errors,
+        }
+
+    return render(request, "home.html", context)

@@ -1,8 +1,11 @@
+from urllib.parse import parse_qs, urlparse
+
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
-from neuronsimulator.forms import NeuronInputParamForm
+from neuronsimulator.forms import ParamForm
 from neuronsimulator.models import Neuron
+from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
 class NeuronTests(TestCase):
@@ -16,6 +19,10 @@ class NeuronTests(TestCase):
 
 
 class ViewTests(TestCase):
+    """
+    test views as well as related form, and methods in utils
+    """
+
     @classmethod
     def setUpTestData(cls):
         call_command(
@@ -33,31 +40,30 @@ class ViewTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
 
-    def test_plot_neural_responses_view(self):
-        """
-        Test the plot_neural_responses page returns 200
-        """
-        response = self.client.get(reverse("plot_neural_responses"))
-        self.assertEqual(response.status_code, 200)
-
     def valid_data_set(self):
-        # a set of values for valid NeuronInputParamForm
+        # a set of values for form "ParamForm", also used in script "use_mock_atlas.py"
         valid_data_set = {
-            "stim_neu_id": "ADAL",
-            "resp_neu_ids": "AVAR,ASEL,AWAL",
+            "stim_type": "rectangular",
+            "stim_neu_id": "AVAL",
+            "resp_neu_ids": ["AVAL", "AVAR", "ASEL", "AWAL"],
             "nt": 1000,
             "t_max": 100,
-            "stim_type": "rectangular",
-            "dur": 2.0,
+            "duration": 1.0,
+            "frequency": 0.1,
+            "phi0": "0.0",
+            "tau1": "1.0",
+            "tau2": "0.8",
+            "top_n": None,
+            "strain_type": "wild type",
         }
         return valid_data_set
 
     def test_input_form_valid(self):
         valid_data_set = self.valid_data_set()
-        form = NeuronInputParamForm(data=valid_data_set)
+        form = ParamForm(data=valid_data_set)
         self.assertTrue(form.is_valid())
         params = form.cleaned_data
-        self.assertEqual(len(params), 6)
+        self.assertEqual(len(params), 12)
 
     def test_input_form_invalid(self):
         """
@@ -66,49 +72,68 @@ class ViewTests(TestCase):
         # copy set of valid input values, and then update a value to make form invalid
         valid_data_set = self.valid_data_set()
 
-        # case 1: invalid stim_neu_id would raise an error for this form field
+        # case 1: set stim_neu_id to None
         invalid_data_set1 = valid_data_set.copy()
-        invalid_data_set1["stim_neu_id"] = "dummy"
-        form = NeuronInputParamForm(data=invalid_data_set1)
+        invalid_data_set1["stim_neu_id"] = None
+        form = ParamForm(data=invalid_data_set1)
         self.assertFalse(form.is_valid())
         self.assertTrue(form.errors["stim_neu_id"] is not None)
 
-        # case 2: invalid resp_neu_ids would raise an error for this form field
-        invalid_data_set2 = valid_data_set.copy()
-        invalid_data_set2["resp_neu_ids"] = "dummy, ASEL,AWAL"
-        form = NeuronInputParamForm(data=invalid_data_set2)
-        self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["resp_neu_ids"] is not None)
-
-        # case 3: assigning ADAL to both stim_neu_id and resp_neu_ids would raise a form non-field error
-        # the key for non-field errors in error dictionary is  "__all__"
-        invalid_data_set3 = valid_data_set.copy()
-        invalid_data_set3["resp_neu_ids"] = "ADAL,ASEL,AWAL"
-        form = NeuronInputParamForm(data=invalid_data_set3)
-        self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["__all__"] is not None)
-
-        # case 4: t_max< dur would raise a form non-field error
-        invalid_data_set4 = valid_data_set.copy()
-        invalid_data_set4["t_max"] = 1.0
-        form = NeuronInputParamForm(data=invalid_data_set4)
-        self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["__all__"] is not None)
-
-    def test_plot_neural_responses_post_success(self):
-
-        # if form is valid after post, 6 items are returned for params
-        self.ALL_PARAMS_COUNT = 6
-
+    def test_reqd_params_keys(self):
         valid_data_set = self.valid_data_set()
-        form = NeuronInputParamForm(data=valid_data_set)
-        self.assertTrue(form.is_valid())
-
-        response = self.client.post(
-            reverse("plot_neural_responses"), data=valid_data_set
+        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
+            valid_data_set
         )
-        # response context if form post is valid
-        self.assertIsNotNone(response.context["form"])
-        self.assertIsNotNone(response.context["plot_div"])
-        self.assertEqual(len(response.context["neurons"]), self.ALL_NEURONS_COUNT)
-        self.assertEqual(len(response.context["params"]), self.ALL_PARAMS_COUNT)
+        reqd_params_keys = reqd_params_dict.keys()
+        expt_keys_for_rectangular_type = wfc2plot().get_reqd_params_keys("rectangular")
+        self.assertEqual(len(reqd_params_keys), len(expt_keys_for_rectangular_type))
+        self.assertEqual(any(reqd_params_keys), any(expt_keys_for_rectangular_type))
+
+    def test_resp_labels(self):
+        valid_data_set = self.valid_data_set()
+        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
+            valid_data_set
+        )
+        resp, labels, msg, app_error_dict = wfc2plot().get_resp_in_ndarray(
+            valid_data_set
+        )
+        self.assertEqual(resp.shape[0], 4)
+        self.assertEqual(resp.shape[1], 1000)
+        self.assertEqual(len(labels), 4)
+        self.assertEqual(app_error_dict, {})
+
+    def test_get_url_to_params(self):
+        valid_data_set = self.valid_data_set()
+        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
+            valid_data_set
+        )
+        url_query_string, app_error_dict = wfc2plot().get_url_query_string_for_plot(
+            valid_data_set
+        )
+        url_param_dict = parse_qs(urlparse(url_query_string).path)
+        # each value is list type in url_param_dict
+        self.assertEqual(
+            str(url_param_dict["stim_type"][0]), valid_data_set["stim_type"]
+        )
+        self.assertEqual(
+            str(url_param_dict["stim_neu_id"][0]), valid_data_set["stim_neu_id"]
+        )
+        self.assertEqual(
+            any(url_param_dict["resp_neu_ids"][0]), any(valid_data_set["resp_neu_ids"])
+        )
+        self.assertEqual(int(url_param_dict["nt"][0]), valid_data_set["nt"])
+        self.assertEqual(float(url_param_dict["t_max"][0]), valid_data_set["t_max"])
+        self.assertEqual(
+            float(url_param_dict["duration"][0]), valid_data_set["duration"]
+        )
+
+    def test_get_stim_type_choice(self):
+        stim_type_choice = wfc2plot().get_stim_type_choice()
+        sel_choice = ("delta", "delta")
+        stim_type_choice = wfc2plot().get_stim_type_choice()
+        self.assertTrue(sel_choice in stim_type_choice)
+
+    def test_get_form_opt_field_dict(self):
+        form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
+        self.assertEqual(form_opt_field_dict["duration"]["stim_type"], "rectangular")
+        self.assertEqual(form_opt_field_dict["duration"]["default"], 1.0)

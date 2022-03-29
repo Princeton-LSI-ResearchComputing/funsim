@@ -1,23 +1,192 @@
 {% extends "base.html" %}
 {% load static %}
-{% block content %}
-<div>
-    <h3>Neuron Simulator Dashboard</h3>
-    <br>
-    <h4>Overview</h4>
-    <p>#TODO#: need feedback from the lab about this section </p>
-    <br>
-  
-    <p>
-        <a href="{% url 'plot_neural_responses' %}" role="button" class="btn btn-primary w-80 mb-2">Plot neural responses</a>
-    </p>
-    <hr>
-    <br>
-    
-    <p>Note: keep the following page during early phase of testing, will delete it later</p>
-    <p>
-        <a href="{% url 'list_input_params' %}" role="button" class="btn btn-primary w-80 mb-2">List input parameters</a>
-    </p>
-</div>
+{% block title %}Neuron Simulator{% endblock %}
+
+{% block head_extras %}
+    {{ block.super }}
+    <style>
+        #div1 {
+            background-color: #f0ebcccb;
+        }
+    </style>
+
+    <!--form initial values for optional fields-->
+    {{ form_opt_field_init_dict|json_script:"form_opt_field_init_dict" }}
+
+    <script>
+        // Initialize Bootstrap Tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        // get names and initial values for optional fields
+        var form_opt_field_init_dict = JSON.parse(document.getElementById('form_opt_field_init_dict').textContent);
+
+        function showField(field_name) {
+            let div_id = 'div_' +  field_name;   
+            document.getElementById(div_id).style.display='block';
+        }
+
+        function hideField(field_name) {
+            let div_id = 'div_' +  field_name;
+            document.getElementById(div_id).style.display='none';
+        }
+
+        function showHideFormFields() {
+            // get value for stim_type
+            let stim_type_value = document.getElementById("id_stim_type").value;
+            let sel_option = document.getElementById("id_stim_type").selectedOptions;
+
+            Object.entries(form_opt_field_init_dict).forEach((entry) => {
+            let [field_name, field_attrs] = entry;
+            if ( field_attrs["stim_type"] === stim_type_value) {
+                showField(field_name);
+            } else {
+                hideField(field_name);
+            }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded",function() {
+            showHideFormFields()
+        })
+
+        function emptyOutput() {
+            // empty output section
+            document.getElementById("div_output").innerHTML = "";
+        }
+
+        function setTopNToNone() {
+            // set top_n to None
+            document.getElementById("id_top_n").value = "";
+
+        }
+
+        function setRespNeuIDsToNone() {
+            // set resp_neu_ids to None
+            $('#id_resp_neu_ids').selectpicker('val', 'deselectAll');
+        }
+    </script>
 {% endblock %}
 
+{% block content %}
+<div id="intro">
+    <!--Webpage introduction --> 
+    {% if web_intro %}
+        <h4>{{ web_intro }}</h4>
+    {% endif %}
+    <br>
+</div>
+<div class="row" id="div0">
+    <div class="col-sm-4" id="div1">
+        {% if form %}
+            <form action="/neuronsimulator/" method="POST" id="form">
+               {% csrf_token %}
+                <!--handle errors-->
+                {% if form.errors %}
+                    <!--non-field errors-->
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                 <!--hidden fields-->
+                 {% for hidden_field in form.hidden_fields %}
+                        {% if hidden_field.errors %}
+                            <div class="alert alert-danger">{{ hidden_field.errors }}</div>
+                        {% endif %}
+                        {{ hidden_field }}
+                {% endfor %}
+                <!--non-hidden fields-->
+                <!--render the fields manually and set display for each field based on inital stim_type-->
+                <div id="div_stim_neu_id" style="display:block">
+                    <label>{{ form.stim_neu_id.label }}</label>
+                    {{ form.stim_neu_id.errors }}
+                    {{ form.stim_neu_id }}
+                </div>
+                <br>
+                <div id="div_stim_type" class="form-control"
+                    onchange="showHideFormFields(); emptyOutput()">
+                    <label>{{ form.stim_type.label }}</label>                   
+                    {{ form.stim_type.errors }}
+                    {{ form.stim_type }}
+                </div>
+                <br>
+                <!-- optional fields-->
+                {% for field in form.visible_fields %}
+                    {% if field.name in opt_field_names %}
+                        <div id="div_{{ field.name }}" style="display:none" class="form-control">
+                            <label id="label_for_{{ field.name }}" for="{{ field.name }}">{{ field.label }}</label>
+                            {{ field.errors }}
+                            {{ field }} &nbsp;&nbsp;
+                            <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_{{ field.name }}_helptext"></i>
+                            <div class="collapse" id="id_{{ field.name }}_helptext">
+                                <div class="card card-body">{{ field.help_text }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <!--Which Strain-->
+                <hr>
+                <div id="div_strain_type" style="display:block" class="form-control">
+                    <label>{{ form.strain_type.label }}</label>
+                    {{ form.strain_type.errors }}
+                    {{ form.strain_type }}
+                </div>
+                <!--responding neurons-->
+                <hr>
+                <p> Select response neuron(s) or top N responses:
+                <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_resp_helptext"></i>
+                </p>
+                    <div class="collapse" id="id_resp_helptext">
+                        <div class="card card-body">
+                            <p>Selecting one or multiple response neurons will automatically deselect top N value. 
+                                Entering a value for top N will automatically deselect response neuron(s), and plot top N
+                                responses based on rank. The default value for Top N is 0. Unselecting both response neurons and top N 
+                                will plot responses based on default threshold value.
+                            </p>
+                        </div>
+                    </div>
+                <div id="div_resp_neu_ids" style="display:block" onclick="setTopNToNone()"> 
+                    <label>{{ form.resp_neu_ids.label }}</label>
+                    {{ form.resp_neu_ids.errors }}
+                    {{ form.resp_neu_ids }}
+                </div>
+                <br>
+                <div id="div_top_n" onchange="setRespNeuIDsToNone()">
+                    <label>{{ form.top_n.label }}</label>
+                    {{ form.top_n.errors }}
+                    {{ form.top_n }}&nbsp;&nbsp;
+                    <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_top_n_helptext"></i>
+                    <div class="collapse" id="id_top_n_helptext">
+                        <div class="card card-body">{{ form.top_n.help_text }}</div>
+                    </div>
+                </div>
+                <br>
+                <div id="div_t_max" class="form-control" style="display:block">
+                    <label>{{ form.t_max.label }}</label>
+                        {{ form.t_max.errors }}
+                        {{ form.t_max }}
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col">
+                        <input id="button_submit" style="display:block" type="submit"
+                            value="Plot" class="btn btn-lg btn-primary">
+                    </div>
+                    <div class="col">
+                        <input id="button_startover" style="display:block" type="button"
+                            onclick="window.location = window.location.pathname"
+                            value="Start Over" class="btn btn-lg btn-primary">
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+    <br>
+    <div id="div_output" class="col-sm-8" style="display:block">
+        {% include "output_params_plot.html" %}
+    </div>
+</div>
+
+{% endblock %}

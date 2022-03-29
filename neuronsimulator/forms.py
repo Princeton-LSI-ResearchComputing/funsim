@@ -1,110 +1,101 @@
 from django import forms
 from django.core.validators import MinValueValidator
 from neuronsimulator.models import Neuron
-
-STIM_TYPE_CHOICES = (
-    ("rectangular", "rectangular"),
-    ("delta", "delta"),
-    ("sine", "sine"),
-    ("realistic", "realistic"),
-)
+from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
-class NeuronInputParamForm(forms.Form):
-    stim_neu_id = forms.CharField(max_length=10, widget=forms.HiddenInput())
-    resp_neu_ids = forms.CharField(
-        max_length=3000, required=False, widget=forms.HiddenInput()
+class ParamForm(forms.Form):
+    """
+    This is a form class used for collecting parameters from POST or GET request to plot neural responses
+    """
+
+    stim_type_list = wfc2plot().get_stim_type_list()
+    stim_type_choices = wfc2plot().get_stim_type_choice()
+
+    form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
+
+    neuron_choices = [
+        (neu_id, neu_id)
+        for neu_id in Neuron.objects.all().values_list("name", flat=True)
+    ]
+
+    STRAIN_CHOICES = [
+        ("wild type", "wild type"),
+        ("mutant1", "mutant1"),
+    ]
+
+    stim_type = forms.ChoiceField(
+        choices=stim_type_choices,
+        label="Type of standard stimulus",
+        initial="rectangular",
+        widget=forms.Select,
+    )
+    stim_neu_id = forms.ChoiceField(
+        choices=neuron_choices,
+        initial="ADAL",
+        label="Stimulated neuron",
+        widget=forms.Select(
+            attrs={
+                "class": "selectpicker",
+                "data-live-search": "true",
+                "data-width": "fit",
+            }
+        ),
+    )
+    resp_neu_ids = forms.MultipleChoiceField(
+        choices=neuron_choices,
+        label="Responding neurons",
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "selectpicker",
+                "data-live-search": "true",
+                "data-width": "fit",
+                "data-actions-box": "true",
+            }
+        ),
+    )
+    top_n = forms.IntegerField(
+        initial=0,
+        label="Top N Responses",
+        required=False,
+        help_text="If not None, return top N responses with the largest absolute peak amplitude",
+        widget=forms.NumberInput(attrs={"max": len(neuron_choices), "min": 0}),
     )
     nt = forms.IntegerField(
         initial=1000,
-        label="Number of time points(nt)",
+        label="Number of time points",
         validators=[MinValueValidator(1)],
+        widget=forms.HiddenInput(attrs={"min": 1}),
     )
-    # use t_max to replace dt
-    t_max = forms.DecimalField(
+    t_max = forms.FloatField(
         initial=100,
-        label="Maximum time(t_max)",
-        validators=[MinValueValidator(0)],
-        help_text="value requirement: t_max>dur",
-    )
-    stim_type = forms.ChoiceField(
-        choices=STIM_TYPE_CHOICES,
-        widget=forms.Select,
-        label="Type of standard stimulus(stim_type)",
-        initial="rectangular",
-    )
-    dur = forms.DecimalField(
-        initial=2.0,
-        label="Duration of the stimulus(dur)",
+        label="Maximum time (t_max)",
         validators=[MinValueValidator(0.1)],
     )
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        stim_neu_id = cleaned_data.get("stim_neu_id")
-        resp_neu_ids = cleaned_data.get("resp_neu_ids")
-
-        # a neuron cannot be selected for both stim_neu_id and resp_neu_ids
-        if resp_neu_ids is not None:
-            resp_neu_arr = cleaned_data.get("resp_neu_ids").split(",")
-            if stim_neu_id in resp_neu_arr:
-                raise forms.ValidationError(
-                    "Response neuron(s) cannot include stimulated neuron, please make a different selection."
-                )
-
-        # t_max should be larger than dur
-        t_max = float(cleaned_data.get("t_max"))
-        dur = float(cleaned_data.get("dur"))
-        if t_max < dur:
-            raise forms.ValidationError("t_max must be larger than dur.")
-
-    def clean_stim_neu_id(self):
-        neurons = Neuron.objects.values_list("name", flat=True).all()
-        stim_neu_id = self.cleaned_data.get("stim_neu_id", None)
-        if stim_neu_id not in neurons:
-            raise forms.ValidationError("stimulated neuron is not a valid neuron")
-        return stim_neu_id
-
-    def clean_resp_neu_ids(self):
-        neurons = Neuron.objects.values_list("name", flat=True).all()
-        resp_neu_ids = self.cleaned_data.get("resp_neu_ids", None)
-
-        """
-        resp_neu_ids could be None based on wormfunconn source code
-        but require at least one resp neuron at this stage of test
-        will deal with this case later: resp_neu_ids=None and use a threshold value
-        """
-        if len(resp_neu_ids) == 0:
-            raise forms.ValidationError(
-                "You must select at least one response neuron (for testing)."
-            )
-        else:
-            resp_neu_arr = resp_neu_ids.split(",")
-            invalid_neurons = [i for i in resp_neu_arr if i not in neurons]
-            if len(invalid_neurons) > 0:
-                raise forms.ValidationError(
-                    f"Invalid response neuron(s) encountered: [{', '.join(invalid_neurons)}]"
-                )
-        return resp_neu_ids
-
-
-# keep ParamForm for now (as a reference for evaluating NeuronInputParamForm and form render)
-class ParamForm(forms.Form):
-    stim_neuron = forms.CharField(
-        max_length=10, widget=forms.TextInput, label="stim_neu_id"
+    strain_type = forms.ChoiceField(
+        choices=STRAIN_CHOICES,
+        widget=forms.Select,
+        label="Type of strain",
+        initial="wild type",
     )
-    resp_neurons = forms.CharField(
-        max_length=3000, widget=forms.Textarea(attrs={"rows": 3}), label="resp_neu_ids"
-    )
-    nt = forms.IntegerField(initial=1000, label="nt", help_text="Number of time points")
-    dt = forms.DecimalField(initial=0.1, label="dt", help_text="Time step")
-    stim_type = forms.CharField(
-        widget=forms.TextInput,
-        label="stim_type",
-        initial="rectangular",
-        help_text="Type of standard stimulus",
-    )
-    dur = forms.IntegerField(
-        initial=2, label="dur", help_text="Duration of the stimulus"
-    )
+    # optional fields based on stim_types
+    duration = forms.FloatField()
+    frequency = forms.FloatField()
+    phi0 = forms.FloatField()
+    tau1 = forms.FloatField()
+    tau2 = forms.FloatField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # set attrs. for optional fields:
+        for field_name, field_attrs in self.form_opt_field_dict.items():
+            self.fields[field_name].label = field_attrs["label"]
+            self.fields[field_name].initial = field_attrs["default"]
+            self.fields[field_name].help_text = field_attrs["help_text"]
+            self.fields[field_name].widget.attrs["min"] = field_attrs["min_val"]
+            self.fields[field_name].widget.attrs["max"] = field_attrs["max_val"]
+            self.fields[field_name].widget.attrs["step"] = field_attrs["step"]
+            # found a bug in FunctionalAtlas.get_standard_stim_kwargs(stim_type)
+            # a workaround for current version
+            self.fields["frequency"].initial = 0.1
