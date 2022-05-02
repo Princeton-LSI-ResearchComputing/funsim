@@ -3,6 +3,7 @@ import re
 from urllib.parse import urlencode
 
 import numpy as np
+import plotly.express as px
 import plotly.graph_objects as go
 from django.conf import settings
 from plotly.offline import plot
@@ -21,7 +22,7 @@ class WormfunconnToPlot:
         """
         get the list of stim_types defined by wormfunconn package
         """
-        stim_type_list = ["rectangular", "delta", "sinusoidal", "realistic"]
+        stim_type_list = ["realistic", "rectangular", "delta", "sinusoidal"]
         return stim_type_list
 
     @classmethod
@@ -43,7 +44,7 @@ class WormfunconnToPlot:
         method.
         example:
         stim_type=="sinusoidal":
-        kwargs = [{"name": "frequency", "type": "float", "default": 1.0,
+        kwargs = [{"name": "frequency", "type": "float", "default": 0.25,
                         "label": "Frequency (Hz)", "range": [0.,0.25]},
                        {"name": "phi0", "type": "float", "default": 0.0,
                         "label": "Phase", "range": [0.,6.28]}]
@@ -83,12 +84,20 @@ class WormfunconnToPlot:
 
         return form_opt_field_dict
 
-    @classmethod
-    def get_funatlas(cls):
+    def get_funatlas(self, strain_type):
+        self.strain_type = strain_type
         # Get atlas folder and file name
         folder = os.path.join(settings.MEDIA_ROOT, "atlas/")
-        # use mock file for now, need feedback from the lab
-        fname = "mock.pickle"
+        # TODO: need to change the file names when the dtaasets are ready
+        # use mock file based on strain type
+        # the file names may change later
+        if strain_type == "wild type":
+            fname = "mock-wt.pickle"
+        elif strain_type == "unc-31":
+            fname = "mock-unc-31.pickle"
+        else:
+            fname = "mock.pickle"
+
         app_error_dict = {}
 
         # Create FunctionalAtlas instance from file
@@ -108,6 +117,17 @@ class WormfunconnToPlot:
     def dt_to_t_max(dt, nt):
         t_max = dt * nt
         return t_max
+
+    def get_neuron_ids(self, strain_type):
+        self.strain_type = strain_type
+        funatlas, app_error_dict = self.get_funatlas(strain_type)
+        if funatlas:
+            try:
+                neuron_id_list = funatlas.get_neuron_ids()
+            except Exception as e:
+                neuron_id_list = []
+                app_error_dict["get_neuron_ids_error"] = e
+        return neuron_id_list, app_error_dict
 
     @staticmethod
     def resp_labels_to_dict(labels):
@@ -133,6 +153,7 @@ class WormfunconnToPlot:
         """
         # shared kwargs for all stim_types
         reqd_params_keys = [
+            "strain_type",
             "stim_type",
             "stim_neu_id",
             "resp_neu_ids",
@@ -168,6 +189,13 @@ class WormfunconnToPlot:
             if stim_type in exp_stim_type_list:
                 reqd_params_keys = self.get_reqd_params_keys(stim_type)
                 reqd_params_dict = {key: params_dict[key] for key in reqd_params_keys}
+                if (
+                    reqd_params_dict["stim_neu_id"] is None
+                    or reqd_params_dict["stim_neu_id"] == ""
+                ):
+                    app_error_dict[
+                        "Note"
+                    ] = "please select at least a stimulated neuron before plotting."
             else:
                 app_error_dict[
                     "input_parameter_error"
@@ -180,27 +208,32 @@ class WormfunconnToPlot:
         self.params_dict = params_dict
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         # default value
+        app_error_dict = {}
         stim = np.empty(0)
-        out_resp_labels_to_dict = {}
 
         if reqd_params_dict:
             # get required values for every stim_type first
+            strain_type = reqd_params_dict["strain_type"]
             stim_type = reqd_params_dict["stim_type"]
             nt = int(reqd_params_dict["nt"])
             t_max = float(reqd_params_dict["t_max"])
             dt = self.t_max_to_dt(t_max, nt)
+            # raise warning if stim_neu_id is null
             stim_neu_id = reqd_params_dict["stim_neu_id"]
+            # resp_neu_ids
             resp_neu_ids = reqd_params_dict["resp_neu_ids"]
             if len(resp_neu_ids) == 0:
                 resp_neu_ids = None
+            # top_n
             top_n = reqd_params_dict["top_n"]
             if top_n is None or top_n == "None":
                 top_n = None
             else:
                 top_n = int(top_n)
 
-            # Create FunctionalAtlas instance from file
-            funatlas, app_error_dict = self.get_funatlas()
+            if app_error_dict == {}:
+                # Create FunctionalAtlas instance from file
+                funatlas, app_error_dict = self.get_funatlas(strain_type)
 
             # call get_standard_stimulus based on stim_type
             if funatlas:
@@ -237,7 +270,7 @@ class WormfunconnToPlot:
         # Get responses
         try:
             if stim.size > 0:
-                resp, labels, msg = funatlas.get_responses(
+                resp, labels, confidences, msg = funatlas.get_responses(
                     stim,
                     dt,
                     stim_neu_id,
@@ -248,42 +281,38 @@ class WormfunconnToPlot:
             elif stim.size == 0:
                 resp = np.empty(0)
                 labels = []
+                confidences = None
                 msg = None
         except Exception as e:
             app_error_dict["get_responses_error"] = e
             resp = np.empty(0)
             labels = []
+            confidences = None
             msg = None
 
-        # if resp_neu_ids is None, the responses are for all neurons, need to filter based on top_n ranks
-        if resp_neu_ids is None and (type(top_n) is int):
-            resp = resp[:top_n]
-            labels = labels[:top_n]
-            # filtered resp_neu_ids with rank
-            out_resp_labels_to_dict = self.resp_labels_to_dict(labels)
-            out_resp_neu_ids = out_resp_labels_to_dict.keys()
-            # remove the message for stim_neu_id if it is not in filtered response output
-            if len(out_resp_neu_ids) > 0 and stim_neu_id not in out_resp_neu_ids:
-                msg_str = f"The activity of the stimulated neuron ({stim_neu_id}) is the activity set as stimulus."
-                msg = msg.replace(msg_str, "")
-            # change message if no response plot
-            elif len(out_resp_neu_ids) == 0:
-                msg = "Select responsing neuron(s) or set top N >0 to generate neural response plot(s)."
-            else:
-                msg = msg
-
-        return resp, labels, msg, app_error_dict
+        return resp, labels, confidences, msg, app_error_dict
 
     def get_plot_html_div(self, params_dict):
         """
         convert and verify values for plotting neural responses using plotly
-        ref: https://plotly.com/python/line-charts/#line-plot-with-goscatter
-        ref: https://albertrtk.github.io/2021/01/24/Graph-on-a-web-page-with-Plotly-and-Django.html
+        references:
+        https://plotly.com/python/line-charts/#line-plot-with-goscatter
+        https://albertrtk.github.io/2021/01/24/Graph-on-a-web-page-with-Plotly-and-Django.html
+        https://plotly.com/python-api-reference/generated/plotly.graph_objects.Scatter.html
+        https://plotly.com/python/reference/scatter/
+        https://plotly.com/python-api-reference/generated/plotly.colors.html
+        https://plotly.com/python/hover-text-and-formatting/#selecting-a-hovermode-in-a-figure-created-with-plotlygraphobjects
+        https://plotly.com/python/figure-labels/
         """
         self.params_dict = params_dict
+        nt = int(params_dict["nt"])
+        t_max = float(params_dict["t_max"])
+        dt = self.t_max_to_dt(t_max, nt)
 
         # get response related output
-        resp, labels, msg, app_error_dict = self.get_resp_in_ndarray(params_dict)
+        resp, labels, confidences, msg, app_error_dict = self.get_resp_in_ndarray(
+            params_dict
+        )
 
         # default value
         plot_div = None
@@ -291,12 +320,17 @@ class WormfunconnToPlot:
         if msg is not None and msg != "":
             resp_msg = "Notes:\n" + msg
 
+        # create colormap for n colors
+        n_colors = len(labels)
+        colors = px.colors.sample_colorscale(
+            "rainbow", [n / (n_colors - 1) for n in range(n_colors)]
+        )
+
         if resp.size > 0:
             stim_neu_id = params_dict["stim_neu_id"]
             # transposed array for response datasets
             y_data_set = resp.T
-            x_data = np.arange(y_data_set.shape[0])
-
+            x_data = np.arange(nt) * dt
             graphs = []
             for i in range(len(labels)):
                 y_data = y_data_set[..., i]
@@ -306,16 +340,19 @@ class WormfunconnToPlot:
                         x=x_data,
                         y=y_data,
                         mode="lines",
-                        name=labels[i],
+                        line=dict(color=colors[i], width=4),
+                        opacity=confidences[i],
+                        name=labels[i] + " (confidence=" + str(confidences[i]) + ")",
+                        hovertemplate="(%{x},%{y})",
                     )
                 )
 
             # layout of the figure.
             layout = {
                 "title": f"Plot: Neural Responses to Stimulated Neuron ({stim_neu_id})",
-                "xaxis_title": "Time Point",
+                "xaxis_title": "Time (s)",
                 "yaxis_title": "Neural Response",
-                "legend_title_text": "Responding Neuron (rank)",
+                "legend_title_text": "Responding Neuron (rank) (confidence value)",
                 "showlegend": True,
                 "height": 800,
                 "width": 1200,
@@ -367,11 +404,14 @@ class WormfunconnToPlot:
         self.params_dict = params_dict
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         # get required values for every stim_type first
+        # TODO: need to add strain_type later
+        # strain_type = reqd_params_dict["strain_type"]
         stim_type = reqd_params_dict["stim_type"]
         stim_neu_id = reqd_params_dict["stim_neu_id"]
         resp_neu_ids = reqd_params_dict["resp_neu_ids"]
         nt = int(reqd_params_dict["nt"])
         t_max = float(reqd_params_dict["t_max"])
+        top_n = reqd_params_dict["top_n"]
 
         dt = self.t_max_to_dt(t_max, nt)
 
@@ -384,7 +424,15 @@ class WormfunconnToPlot:
         # get code snippet
         try:
             code_snippet = FunctionalAtlas.get_code_snippet(
-                nt, dt, stim_type, stim_kwargs, stim_neu_id, resp_neu_ids
+                nt,
+                dt,
+                stim_type,
+                stim_kwargs,
+                stim_neu_id,
+                resp_neu_ids,
+                threshold=0.0,
+                top_n=top_n,
+                sort_by_amplitude=True,
             )
         except Exception as e:
             app_error_dict["plot_code_snippet_error"] = e
