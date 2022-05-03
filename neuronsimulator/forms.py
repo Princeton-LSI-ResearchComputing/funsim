@@ -1,6 +1,6 @@
+import wormfunconn as wfc
 from django import forms
 from django.core.validators import MinValueValidator
-from neuronsimulator.models import Neuron
 from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
 
 
@@ -14,53 +14,30 @@ class ParamForm(forms.Form):
 
     form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
 
-    neuron_choices = [
-        (neu_id, neu_id)
-        for neu_id in Neuron.objects.all().values_list("name", flat=True)
-    ]
+    strains = wfc.strains
 
-    STRAIN_CHOICES = [
-        ("wild type", "wild type"),
-        ("mutant1", "mutant1"),
-    ]
+    STRAIN_CHOICES = [(strain, strain) for strain in strains]
 
+    strain_type = forms.ChoiceField(
+        choices=STRAIN_CHOICES,
+        widget=forms.Select,
+        label="Type of strain",
+        initial="wild type",
+    )
     stim_type = forms.ChoiceField(
         choices=stim_type_choices,
-        label="Type of standard stimulus",
-        initial="rectangular",
+        label="Type of standard activity",
+        initial="realistic",
         widget=forms.Select,
     )
-    stim_neu_id = forms.ChoiceField(
-        choices=neuron_choices,
-        initial="ADAL",
-        label="Stimulated neuron",
-        widget=forms.Select(
-            attrs={
-                "class": "selectpicker",
-                "data-live-search": "true",
-                "data-width": "fit",
-            }
-        ),
-    )
-    resp_neu_ids = forms.MultipleChoiceField(
-        choices=neuron_choices,
-        label="Responding neurons",
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={
-                "class": "selectpicker",
-                "data-live-search": "true",
-                "data-width": "fit",
-                "data-actions-box": "true",
-            }
-        ),
-    )
+    stim_neu_id = forms.ChoiceField()
+    resp_neu_ids = forms.MultipleChoiceField()
     top_n = forms.IntegerField(
         initial=0,
         label="Top N Responses",
         required=False,
         help_text="If not None, return top N responses with the largest absolute peak amplitude",
-        widget=forms.NumberInput(attrs={"max": len(neuron_choices), "min": 0}),
+        widget=forms.NumberInput(attrs={"min": 0}),
     )
     nt = forms.IntegerField(
         initial=1000,
@@ -70,14 +47,8 @@ class ParamForm(forms.Form):
     )
     t_max = forms.FloatField(
         initial=100,
-        label="Maximum time (t_max)",
+        label="Maximum time (s)",
         validators=[MinValueValidator(0.1)],
-    )
-    strain_type = forms.ChoiceField(
-        choices=STRAIN_CHOICES,
-        widget=forms.Select,
-        label="Type of strain",
-        initial="wild type",
     )
     # optional fields based on stim_types
     duration = forms.FloatField()
@@ -87,6 +58,7 @@ class ParamForm(forms.Form):
     tau2 = forms.FloatField()
 
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
         # set attrs. for optional fields:
         for field_name, field_attrs in self.form_opt_field_dict.items():
@@ -96,6 +68,53 @@ class ParamForm(forms.Form):
             self.fields[field_name].widget.attrs["min"] = field_attrs["min_val"]
             self.fields[field_name].widget.attrs["max"] = field_attrs["max_val"]
             self.fields[field_name].widget.attrs["step"] = field_attrs["step"]
-            # found a bug in FunctionalAtlas.get_standard_stim_kwargs(stim_type)
-            # a workaround for current version
-            self.fields["frequency"].initial = 0.1
+
+        # default choices for neurons
+        neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild type")
+        # set neuron choices based on strain type
+        if "strain_type" in self.data:
+            try:
+                strain_type = self.data.get("strain_type")
+                neuron_ids, app_error_dict = wfc2plot().get_neuron_ids(strain_type)
+                # TODO: remove the following two lines when the dataset is ready
+                if strain_type == "unc-31":
+                    neuron_ids = neuron_ids[:5]
+            except (ValueError, TypeError):
+                neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild type")
+
+        neuron_choices = [
+            (neu_id, neu_id)
+            # TODO: remove the following line during final code cleanup
+            # for neu_id in Neuron.objects.all().values_list("name", flat=True)
+            for neu_id in neuron_ids
+        ]
+
+        self.fields["stim_neu_id"] = forms.ChoiceField(
+            choices=neuron_choices,
+            required=False,
+            label="Stimulated neuron",
+            widget=forms.Select(
+                attrs={
+                    "class": "selectpicker",
+                    "data-live-search": "true",
+                    "data-width": "fit",
+                    "title": "Choose one neuron",
+                }
+            ),
+        )
+
+        self.fields["resp_neu_ids"] = forms.MultipleChoiceField(
+            choices=neuron_choices,
+            label="Responding neurons",
+            required=False,
+            widget=forms.SelectMultiple(
+                attrs={
+                    "class": "selectpicker",
+                    "data-live-search": "true",
+                    "data-width": "fit",
+                    "data-actions-box": "true",
+                }
+            ),
+        )
+
+        self.fields["top_n"].widget.attrs["max"] = len(neuron_ids) - 1

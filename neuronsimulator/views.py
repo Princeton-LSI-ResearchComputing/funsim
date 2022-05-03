@@ -1,4 +1,5 @@
 import wormfunconn as wfc
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from neuronsimulator.forms import ParamForm
@@ -104,3 +105,13 @@ def home(request):
         }
 
     return render(request, "home.html", context)
+
+
+def load_neurons(request):
+    strain_type = request.GET.get("strain_type")
+    neuron_ids, app_error_dict = wfc2plot().get_neuron_ids(strain_type)
+    if strain_type == "unc-31":
+        neuron_ids = neuron_ids[:5]
+
+    response_data = {"neurons": neuron_ids}
+    return JsonResponse(response_data)

@@ -12,8 +12,7 @@
 <div id="app_errors">
     {% if app_error_dict %}
     <div class="text-danger">
-        <h4>Got following error(s), no plot was generated:</h4>
-        {% for key, value in app_errors.items %}
+        {% for key, value in app_error_dict.items %}
             <li>{{ key |capfirst  }}: {{ value }}</li>
         {% endfor %}
     </div>

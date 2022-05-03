@@ -72,12 +72,12 @@ class ViewTests(TestCase):
         # copy set of valid input values, and then update a value to make form invalid
         valid_data_set = self.valid_data_set()
 
-        # case 1: set stim_neu_id to None
+        # case 1: set duration to None
         invalid_data_set1 = valid_data_set.copy()
-        invalid_data_set1["stim_neu_id"] = None
+        invalid_data_set1["duration"] = None
         form = ParamForm(data=invalid_data_set1)
         self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["stim_neu_id"] is not None)
+        self.assertTrue(form.errors["duration"] is not None)
 
     def test_reqd_params_keys(self):
         valid_data_set = self.valid_data_set()
@@ -94,7 +94,8 @@ class ViewTests(TestCase):
         reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
             valid_data_set
         )
-        resp, labels, msg, app_error_dict = wfc2plot().get_resp_in_ndarray(
+        print("valid_data_set:", valid_data_set)
+        resp, labels, confidences, msg, app_error_dict = wfc2plot().get_resp_in_ndarray(
             valid_data_set
         )
         self.assertEqual(resp.shape[0], 4)

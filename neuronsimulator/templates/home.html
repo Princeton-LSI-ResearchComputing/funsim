@@ -67,6 +67,44 @@
             // set resp_neu_ids to None
             $('#id_resp_neu_ids').selectpicker('val', 'deselectAll');
         }
+
+        function setNeuronChoices() {
+            var url = $("#form").attr("data-neurons-url");
+            $.ajax({
+                async: false,
+                type: 'GET',
+                url: url,
+                data:{
+                    strain_type: $("#id_strain_type").val(),
+                },
+                dataType: 'json',
+                success: function(data) {
+                    var ele1 = document.getElementById("id_stim_neu_id");
+                    var ele2 = document.getElementById("id_resp_neu_ids");
+                    var ele3 = document.getElementById("id_top_n");
+                    // remove all options
+                    ele1.options.length = 0;
+                    ele2.options.length = 0;
+                    // create new option element
+                    for(var i=0; i < data.neurons.length; i++)
+                    {
+                        var option = document.createElement("option");
+                        // console.log(data.neurons[i])
+                        option.innerHTML = '<option value="' + data.neurons[i] + '">' + data.neurons[i] + '</option>';
+                        ele1.innerHTML += option.innerHTML
+                        ele2.innerHTML += option.innerHTML
+                    }
+                    // set top_n max and default values
+                    ele3.setAttribute("max", data.neurons.length -1);
+                    ele3.setAttribute("value", 0);
+                }
+            });
+            // refresh select options
+            $('#id_stim_neu_id').selectpicker('refresh');
+            $('#id_stim_neu_id').selectpicker('');
+            $('#id_resp_neu_ids').selectpicker('refresh');
+            $('#id_resp_neu_ids').selectpicker('deselectAll');
+        }
     </script>
 {% endblock %}
 
@@ -81,7 +119,8 @@
 <div class="row" id="div0">
     <div class="col-sm-4" id="div1">
         {% if form %}
-            <form action="/neuronsimulator/" method="POST" id="form">
+            <form action="/neuronsimulator/" method="POST" id="form" 
+                data-neurons-url="{% url 'load_neurons' %}">
                {% csrf_token %}
                 <!--handle errors-->
                 {% if form.errors %}
@@ -98,6 +137,15 @@
                         {{ hidden_field }}
                 {% endfor %}
                 <!--non-hidden fields-->
+                <!--Which Strain-->
+                <br>
+                <div id="div_strain_type" style="display:block" class="form-control" 
+                    onchange="setNeuronChoices();emptyOutput()">
+                    <label>{{ form.strain_type.label }}</label>
+                    {{ form.strain_type.errors }}
+                    {{ form.strain_type }}
+                </div>
+                <hr>
                 <!--render the fields manually and set display for each field based on inital stim_type-->
                 <div id="div_stim_neu_id" style="display:block">
                     <label>{{ form.stim_neu_id.label }}</label>
@@ -126,13 +174,6 @@
                         </div>
                     {% endif %}
                 {% endfor %}
-                <!--Which Strain-->
-                <hr>
-                <div id="div_strain_type" style="display:block" class="form-control">
-                    <label>{{ form.strain_type.label }}</label>
-                    {{ form.strain_type.errors }}
-                    {{ form.strain_type }}
-                </div>
                 <!--responding neurons-->
                 <hr>
                 <p> Select response neuron(s) or top N responses:
@@ -141,8 +182,8 @@
                     <div class="collapse" id="id_resp_helptext">
                         <div class="card card-body">
                             <p>Selecting one or multiple response neurons will automatically deselect top N value. 
-                                Entering a value for top N will automatically deselect response neuron(s), and plot top N
-                                responses based on rank. The default value for Top N is 0. Unselecting both response neurons and top N 
+                                Entering a value for top N ans deselect all response neuron(s), top N responses will 
+                                be plotted. The default value for Top N is 0. Unselecting both response neurons and top N 
                                 will plot responses based on default threshold value.
                             </p>
                         </div>
@@ -153,7 +194,7 @@
                     {{ form.resp_neu_ids }}
                 </div>
                 <br>
-                <div id="div_top_n" onchange="setRespNeuIDsToNone()">
+                <div id="div_top_n">
                     <label>{{ form.top_n.label }}</label>
                     {{ form.top_n.errors }}
                     {{ form.top_n }}&nbsp;&nbsp;
