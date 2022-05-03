@@ -33,7 +33,7 @@ class ParamForm(forms.Form):
     stim_neu_id = forms.ChoiceField()
     resp_neu_ids = forms.MultipleChoiceField()
     top_n = forms.IntegerField(
-        initial=0,
+        initial=10,
         label="Top N Responses",
         required=False,
         help_text="If not None, return top N responses with the largest absolute peak amplitude",

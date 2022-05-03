@@ -96,7 +96,7 @@
                     }
                     // set top_n max and default values
                     ele3.setAttribute("max", data.neurons.length -1);
-                    ele3.setAttribute("value", 0);
+                    ele3.setAttribute("value", 10);
                 }
             });
             // refresh select options
@@ -212,13 +212,13 @@
                 <br>
                 <div class="row">
                     <div class="col">
-                        <input id="button_submit" style="display:block" type="submit"
-                            value="Plot" class="btn btn-lg btn-primary">
-                    </div>
-                    <div class="col">
                         <input id="button_startover" style="display:block" type="button"
                             onclick="window.location = window.location.pathname"
-                            value="Start Over" class="btn btn-lg btn-primary">
+                            value="Start Over" class="btn btn-outline-primary">
+                    </div>
+                    <div class="col">
+                        <input id="button_submit" style="display:block" type="submit"
+                            value="Plot" class="btn btn-lg btn-primary">
                     </div>
                 </div>
             </form>
