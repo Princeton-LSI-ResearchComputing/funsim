@@ -145,7 +145,7 @@
                     {{ form.strain_type.errors }}
                     {{ form.strain_type }}
                 </div>
-                <hr>
+                <br>
                 <!--render the fields manually and set display for each field based on inital stim_type-->
                 <div id="div_stim_neu_id" style="display:block">
                     <label>{{ form.stim_neu_id.label }}</label>
@@ -160,6 +160,7 @@
                     {{ form.stim_type }}
                 </div>
                 <br>
+                <p>Activity waveform temporal shape</p>
                 <!-- optional fields-->
                 {% for field in form.visible_fields %}
                     {% if field.name in opt_field_names %}
@@ -175,8 +176,8 @@
                     {% endif %}
                 {% endfor %}
                 <!--responding neurons-->
-                <hr>
-                <p> Select response neuron(s) or top N responses:
+                <br>
+                <p> Select neurons to measure:
                 <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_resp_helptext"></i>
                 </p>
                     <div class="collapse" id="id_resp_helptext">
@@ -220,6 +221,9 @@
                         <input id="button_submit" style="display:block" type="submit"
                             value="Plot" class="btn btn-lg btn-primary">
                     </div>
+                </div>
+                <div class="row">
+                    <p class="text-danger">Note: please select at least a stimulated neuron before plotting</p>
                 </div>
             </form>
         {% endif %}

@@ -1,5 +1,6 @@
 import os
 import re
+from collections import namedtuple
 from urllib.parse import urlencode
 
 import numpy as np
@@ -91,12 +92,12 @@ class WormfunconnToPlot:
         # TODO: need to change the file names when the dtaasets are ready
         # use mock file based on strain type
         # the file names may change later
-        if strain_type == "wild type":
-            fname = "mock-wt.pickle"
+        if strain_type == "wild-type":
+            fname = "wild-type.pickle"
         elif strain_type == "unc-31":
-            fname = "mock-unc-31.pickle"
+            fname = "unc-31.pickle"
         else:
-            fname = "mock.pickle"
+            fname = "wild-type.pickle"
 
         app_error_dict = {}
 
@@ -189,13 +190,6 @@ class WormfunconnToPlot:
             if stim_type in exp_stim_type_list:
                 reqd_params_keys = self.get_reqd_params_keys(stim_type)
                 reqd_params_dict = {key: params_dict[key] for key in reqd_params_keys}
-                if (
-                    reqd_params_dict["stim_neu_id"] is None
-                    or reqd_params_dict["stim_neu_id"] == ""
-                ):
-                    app_error_dict[
-                        "Note"
-                    ] = "please select at least a stimulated neuron before plotting."
             else:
                 app_error_dict[
                     "input_parameter_error"
@@ -206,9 +200,8 @@ class WormfunconnToPlot:
 
     def get_resp_in_ndarray(self, params_dict):
         self.params_dict = params_dict
-        reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
-        # default value
         app_error_dict = {}
+        reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         stim = np.empty(0)
 
         if reqd_params_dict:
@@ -218,7 +211,6 @@ class WormfunconnToPlot:
             nt = int(reqd_params_dict["nt"])
             t_max = float(reqd_params_dict["t_max"])
             dt = self.t_max_to_dt(t_max, nt)
-            # raise warning if stim_neu_id is null
             stim_neu_id = reqd_params_dict["stim_neu_id"]
             # resp_neu_ids
             resp_neu_ids = reqd_params_dict["resp_neu_ids"]
@@ -267,9 +259,9 @@ class WormfunconnToPlot:
                     stim = np.empty(0)
                     app_error_dict["get_standard_stimulus_error"] = e
 
-        # Get responses
-        try:
-            if stim.size > 0:
+        # Get response
+        if stim_neu_id is not None and stim_neu_id != "" and stim.size > 0:
+            try:
                 resp, labels, confidences, msg = funatlas.get_responses(
                     stim,
                     dt,
@@ -278,13 +270,13 @@ class WormfunconnToPlot:
                     threshold=0.0,
                     top_n=top_n,
                 )
-            elif stim.size == 0:
+            except Exception as e:
+                app_error_dict["get_responses_error"] = e
                 resp = np.empty(0)
                 labels = []
                 confidences = None
                 msg = None
-        except Exception as e:
-            app_error_dict["get_responses_error"] = e
+        else:
             resp = np.empty(0)
             labels = []
             confidences = None
@@ -313,7 +305,6 @@ class WormfunconnToPlot:
         resp, labels, confidences, msg, app_error_dict = self.get_resp_in_ndarray(
             params_dict
         )
-
         # default value
         plot_div = None
         resp_msg = None
@@ -437,3 +428,38 @@ class WormfunconnToPlot:
         except Exception as e:
             app_error_dict["plot_code_snippet_error"] = e
         return code_snippet, app_error_dict
+
+    def get_all_output_for_plot(self, params_dict):
+        """
+        a wrapper to call several methods to get all output for a neural response plot,
+        including plot_div, code_snippet, url_query_string for generating plot with GET method.
+        Possible error messages are merged into app_error_dict
+
+        """
+        self.params_dict = params_dict
+        app_error_dict = {}
+        # get required parameters and values first
+        reqd_params_dict, app_error_dict1 = self.get_reqd_params_dict(params_dict)
+        # get plot_div
+        plot_div, resp_msg, app_error_dict2 = self.get_plot_html_div(reqd_params_dict)
+        # get url_query_string for the plot
+        url_query_string, app_error_dict3 = self.get_url_query_string_for_plot(
+            reqd_params_dict
+        )
+        # get code snippet for the plot
+        code_snippet, app_error_dict4 = self.get_code_snippet_for_plot(reqd_params_dict)
+        app_error_dict = {
+            **app_error_dict1,
+            **app_error_dict2,
+            **app_error_dict3,
+            **app_error_dict4,
+        }
+        # all output in namedtuple
+        AllOutput = namedtuple(
+            "AllOutput",
+            "plot_div, resp_msg, url_query_string, code_snippet, app_error_dict",
+        )
+        all_out = AllOutput(
+            plot_div, resp_msg, url_query_string, code_snippet, app_error_dict
+        )
+        return all_out
