@@ -211,7 +211,6 @@ class WormfunconnToPlot:
             nt = int(reqd_params_dict["nt"])
             t_max = float(reqd_params_dict["t_max"])
             dt = self.t_max_to_dt(t_max, nt)
-            # raise warning if stim_neu_id is null
             stim_neu_id = reqd_params_dict["stim_neu_id"]
             # resp_neu_ids
             resp_neu_ids = reqd_params_dict["resp_neu_ids"]
@@ -260,9 +259,9 @@ class WormfunconnToPlot:
                     stim = np.empty(0)
                     app_error_dict["get_standard_stimulus_error"] = e
 
-        # Get responses
-        try:
-            if stim.size > 0:
+        # Get response
+        if stim_neu_id is not None and stim_neu_id !="" and stim.size > 0:
+            try:
                 resp, labels, confidences, msg = funatlas.get_responses(
                     stim,
                     dt,
@@ -271,13 +270,13 @@ class WormfunconnToPlot:
                     threshold=0.0,
                     top_n=top_n,
                 )
-            elif stim.size == 0:
+            except Exception as e:
+                app_error_dict["get_responses_error"] = e
                 resp = np.empty(0)
                 labels = []
                 confidences = None
                 msg = None
-        except Exception as e:
-            app_error_dict["get_responses_error"] = e
+        else:
             resp = np.empty(0)
             labels = []
             confidences = None
@@ -306,7 +305,6 @@ class WormfunconnToPlot:
         resp, labels, confidences, msg, app_error_dict = self.get_resp_in_ndarray(
             params_dict
         )
-
         # default value
         plot_div = None
         resp_msg = None
