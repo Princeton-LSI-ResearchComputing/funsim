@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from django.conf import settings
 from plotly.offline import plot
 from wormfunconn import FunctionalAtlas
+from collections import namedtuple
 
 
 class WormfunconnToPlot:
@@ -201,8 +202,6 @@ class WormfunconnToPlot:
         self.params_dict = params_dict
         app_error_dict = {}
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
-        # default value
-        # app_error_dict = {}
         stim = np.empty(0)
 
         if reqd_params_dict:
@@ -457,5 +456,10 @@ class WormfunconnToPlot:
             **app_error_dict3,
             **app_error_dict4,
         }
-
-        return plot_div, resp_msg, url_query_string, code_snippet, app_error_dict
+        # all output in namedtuple
+        AllOutput = namedtuple(
+            "AllOutput",
+            "plot_div, resp_msg, url_query_string, code_snippet, app_error_dict"
+            )
+        all_out = AllOutput(plot_div, resp_msg, url_query_string, code_snippet, app_error_dict)
+        return all_out

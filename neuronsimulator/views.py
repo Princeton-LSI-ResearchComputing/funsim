@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from neuronsimulator.forms import ParamForm
 from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
+from collections import namedtuple
 
 
 def home(request):
@@ -59,20 +60,18 @@ def home(request):
 
     if my_form.is_valid():
         # get all output for neural response plot, and write error(s) to app_error_dict
-        (
-            plot_div,
-            resp_msg,
-            url_query_string,
-            code_snippet,
-            app_error_dict,
-        ) = wfc2plot().get_all_output_for_plot(form_params)
+        out = wfc2plot().get_all_output_for_plot(form_params)
+        plot_div = out.plot_div
+        resp_msg = out.resp_msg
+        code_snippet = out.code_snippet
+        app_error_dict = out.app_error_dict
 
         # get url for plot
         url_for_plot = (
             request.build_absolute_uri("/")[:-1]
             + reverse("home")
             + "?"
-            + url_query_string
+            + out.url_query_string
         )
 
         # add all output to context
