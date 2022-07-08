@@ -22,11 +22,11 @@ class ParamForm(forms.Form):
         choices=STRAIN_CHOICES,
         widget=forms.Select,
         label="Type of strain",
-        initial="wild type",
+        initial="wild-type",
     )
     stim_type = forms.ChoiceField(
         choices=stim_type_choices,
-        label="Type of standard activity",
+        label="Activity waveform of stimulated neuron",
         initial="realistic",
         widget=forms.Select,
     )
@@ -34,7 +34,7 @@ class ParamForm(forms.Form):
     resp_neu_ids = forms.MultipleChoiceField()
     top_n = forms.IntegerField(
         initial=10,
-        label="Top N Responses",
+        label="Top N most responsive",
         required=False,
         help_text="If not None, return top N responses with the largest absolute peak amplitude",
         widget=forms.NumberInput(attrs={"min": 0}),
@@ -47,7 +47,7 @@ class ParamForm(forms.Form):
     )
     t_max = forms.FloatField(
         initial=100,
-        label="Maximum time (s)",
+        label="Simulation duration (s)",
         validators=[MinValueValidator(0.1)],
     )
     # optional fields based on stim_types
@@ -70,17 +70,17 @@ class ParamForm(forms.Form):
             self.fields[field_name].widget.attrs["step"] = field_attrs["step"]
 
         # default choices for neurons
-        neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild type")
+        neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild-type")
         # set neuron choices based on strain type
         if "strain_type" in self.data:
             try:
                 strain_type = self.data.get("strain_type")
                 neuron_ids, app_error_dict = wfc2plot().get_neuron_ids(strain_type)
                 # TODO: remove the following two lines when the dataset is ready
-                if strain_type == "unc-31":
-                    neuron_ids = neuron_ids[:5]
+                # if strain_type == "unc-31":
+                #    neuron_ids = neuron_ids[:5]
             except (ValueError, TypeError):
-                neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild type")
+                neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild-type")
 
         neuron_choices = [
             (neu_id, neu_id)
@@ -113,6 +113,7 @@ class ParamForm(forms.Form):
                     "data-live-search": "true",
                     "data-width": "fit",
                     "data-actions-box": "true",
+                    "title": "Choose neurons a priori",
                 }
             ),
         )

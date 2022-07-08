@@ -41,11 +41,11 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def valid_data_set(self):
-        # a set of values for form "ParamForm", also used in script "use_mock_atlas.py"
+        # a set of values for form "ParamForm"
         valid_data_set = {
             "stim_type": "rectangular",
             "stim_neu_id": "AVAL",
-            "resp_neu_ids": ["AVAL", "AVAR", "ASEL", "AWAL"],
+            "resp_neu_ids": ["AVAL", "AVAR", "ASEL"],
             "nt": 1000,
             "t_max": 100,
             "duration": 1.0,
@@ -54,7 +54,7 @@ class ViewTests(TestCase):
             "tau1": "1.0",
             "tau2": "0.8",
             "top_n": None,
-            "strain_type": "wild type",
+            "strain_type": "wild-type",
         }
         return valid_data_set
 
@@ -98,9 +98,9 @@ class ViewTests(TestCase):
         resp, labels, confidences, msg, app_error_dict = wfc2plot().get_resp_in_ndarray(
             valid_data_set
         )
-        self.assertEqual(resp.shape[0], 4)
+        self.assertEqual(resp.shape[0], 3)
         self.assertEqual(resp.shape[1], 1000)
-        self.assertEqual(len(labels), 4)
+        self.assertEqual(len(labels), 3)
         self.assertEqual(app_error_dict, {})
 
     def test_get_url_to_params(self):

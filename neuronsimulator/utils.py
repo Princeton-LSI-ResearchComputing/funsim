@@ -91,12 +91,12 @@ class WormfunconnToPlot:
         # TODO: need to change the file names when the dtaasets are ready
         # use mock file based on strain type
         # the file names may change later
-        if strain_type == "wild type":
-            fname = "mock-wt.pickle"
+        if strain_type == "wild-type":
+            fname = "wild-type.pickle"
         elif strain_type == "unc-31":
-            fname = "mock-unc-31.pickle"
+            fname = "unc-31.pickle"
         else:
-            fname = "mock.pickle"
+            fname = "wild-type.pickle"
 
         app_error_dict = {}
 
@@ -189,13 +189,6 @@ class WormfunconnToPlot:
             if stim_type in exp_stim_type_list:
                 reqd_params_keys = self.get_reqd_params_keys(stim_type)
                 reqd_params_dict = {key: params_dict[key] for key in reqd_params_keys}
-                if (
-                    reqd_params_dict["stim_neu_id"] is None
-                    or reqd_params_dict["stim_neu_id"] == ""
-                ):
-                    app_error_dict[
-                        "Note"
-                    ] = "please select at least a stimulated neuron before plotting."
             else:
                 app_error_dict[
                     "input_parameter_error"
@@ -206,9 +199,10 @@ class WormfunconnToPlot:
 
     def get_resp_in_ndarray(self, params_dict):
         self.params_dict = params_dict
+        app_error_dict = {}
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         # default value
-        app_error_dict = {}
+        # app_error_dict = {}
         stim = np.empty(0)
 
         if reqd_params_dict:
@@ -437,3 +431,31 @@ class WormfunconnToPlot:
         except Exception as e:
             app_error_dict["plot_code_snippet_error"] = e
         return code_snippet, app_error_dict
+
+    def get_all_output_for_plot(self, params_dict):
+        """
+        a wrapper to call several methods to get all output for a neural response plot,
+        including plot_div, code_snippet, url_query_string for generating plot with GET method.
+        Possible error messages are merged into app_error_dict
+
+        """
+        self.params_dict = params_dict
+        app_error_dict = {}
+        # get required parameters and values first
+        reqd_params_dict, app_error_dict1 = self.get_reqd_params_dict(params_dict)
+        # get plot_div
+        plot_div, resp_msg, app_error_dict2 = self.get_plot_html_div(reqd_params_dict)
+        # get url_query_string for the plot
+        url_query_string, app_error_dict3 = self.get_url_query_string_for_plot(
+            reqd_params_dict
+        )
+        # get code snippet for the plot
+        code_snippet, app_error_dict4 = self.get_code_snippet_for_plot(reqd_params_dict)
+        app_error_dict = {
+            **app_error_dict1,
+            **app_error_dict2,
+            **app_error_dict3,
+            **app_error_dict4,
+        }
+
+        return plot_div, resp_msg, url_query_string, code_snippet, app_error_dict

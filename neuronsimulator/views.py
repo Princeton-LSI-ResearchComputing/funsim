@@ -11,7 +11,6 @@ def home(request):
     context = {}
     form_init_dict = {}
     form_params = {}
-    reqd_params_dict = {}
     plot_div = {}
     resp_msg = ""
     url_for_plot = ""
@@ -59,27 +58,23 @@ def home(request):
     form_params = my_form.cleaned_data
 
     if my_form.is_valid():
-        # call methods to get plot related output, and write error(s) to app_error_dict
-        # get required parameters and values first
-        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(form_params)
-        # get plot_div
-        plot_div, resp_msg, app_error_dict = wfc2plot().get_plot_html_div(
-            reqd_params_dict
-        )
+        # get all output for neural response plot, and write error(s) to app_error_dict
+        (
+            plot_div,
+            resp_msg,
+            url_query_string,
+            code_snippet,
+            app_error_dict,
+        ) = wfc2plot().get_all_output_for_plot(form_params)
+
         # get url for plot
-        url_query_string, app_error_dict = wfc2plot().get_url_query_string_for_plot(
-            reqd_params_dict
-        )
         url_for_plot = (
             request.build_absolute_uri("/")[:-1]
             + reverse("home")
             + "?"
             + url_query_string
         )
-        # get code snippet for plot
-        code_snippet, app_error_dict = wfc2plot().get_code_snippet_for_plot(
-            reqd_params_dict
-        )
+
         # add all output to context
         context = {
             "web_intro": web_intro,
@@ -110,8 +105,5 @@ def home(request):
 def load_neurons(request):
     strain_type = request.GET.get("strain_type")
     neuron_ids, app_error_dict = wfc2plot().get_neuron_ids(strain_type)
-    if strain_type == "unc-31":
-        neuron_ids = neuron_ids[:5]
-
     response_data = {"neurons": neuron_ids}
     return JsonResponse(response_data)
