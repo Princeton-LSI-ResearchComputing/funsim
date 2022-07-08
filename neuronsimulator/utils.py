@@ -260,7 +260,7 @@ class WormfunconnToPlot:
                     app_error_dict["get_standard_stimulus_error"] = e
 
         # Get response
-        if stim_neu_id is not None and stim_neu_id !="" and stim.size > 0:
+        if stim_neu_id is not None and stim_neu_id != "" and stim.size > 0:
             try:
                 resp, labels, confidences, msg = funatlas.get_responses(
                     stim,
