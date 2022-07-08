@@ -4,7 +4,6 @@ from django.shortcuts import render
 from django.urls import reverse
 from neuronsimulator.forms import ParamForm
 from neuronsimulator.utils import WormfunconnToPlot as wfc2plot
-from collections import namedtuple
 
 
 def home(request):

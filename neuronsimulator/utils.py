@@ -1,5 +1,6 @@
 import os
 import re
+from collections import namedtuple
 from urllib.parse import urlencode
 
 import numpy as np
@@ -8,7 +9,6 @@ import plotly.graph_objects as go
 from django.conf import settings
 from plotly.offline import plot
 from wormfunconn import FunctionalAtlas
-from collections import namedtuple
 
 
 class WormfunconnToPlot:
@@ -459,7 +459,9 @@ class WormfunconnToPlot:
         # all output in namedtuple
         AllOutput = namedtuple(
             "AllOutput",
-            "plot_div, resp_msg, url_query_string, code_snippet, app_error_dict"
-            )
-        all_out = AllOutput(plot_div, resp_msg, url_query_string, code_snippet, app_error_dict)
+            "plot_div, resp_msg, url_query_string, code_snippet, app_error_dict",
+        )
+        all_out = AllOutput(
+            plot_div, resp_msg, url_query_string, code_snippet, app_error_dict
+        )
         return all_out
