@@ -41,11 +41,11 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def valid_data_set(self):
-        # a set of values for form "ParamForm"
+        # a set of values for form "ParamForm", which can generate response plots for both wild-type and unc-31
         valid_data_set = {
             "stim_type": "rectangular",
-            "stim_neu_id": "AVAL",
-            "resp_neu_ids": ["AVAL", "AVAR", "ASEL"],
+            "stim_neu_id": "FLPL",
+            "resp_neu_ids": ["FLPL", "I4", "I6"],
             "nt": 1000,
             "t_max": 100,
             "duration": 1.0,
@@ -75,9 +75,23 @@ class ViewTests(TestCase):
         # case 1: set duration to None
         invalid_data_set1 = valid_data_set.copy()
         invalid_data_set1["duration"] = None
-        form = ParamForm(data=invalid_data_set1)
-        self.assertFalse(form.is_valid())
-        self.assertTrue(form.errors["duration"] is not None)
+        form1 = ParamForm(data=invalid_data_set1)
+        self.assertFalse(form1.is_valid())
+        self.assertTrue(form1.errors["duration"] is not None)
+
+        # case 2: invalid strain_type
+        invalid_data_set2 = valid_data_set.copy()
+        invalid_data_set2["strain_type"] = "dummy"
+        form2 = ParamForm(data=invalid_data_set2)
+        self.assertFalse(form2.is_valid())
+        self.assertTrue(form2.errors["strain_type"] is not None)
+
+        # case 3: invalid stim_type
+        invalid_data_set3 = valid_data_set.copy()
+        invalid_data_set3["stim_type"] = "dummy"
+        form3 = ParamForm(data=invalid_data_set3)
+        self.assertFalse(form3.is_valid())
+        self.assertTrue(form3.errors["stim_type"] is not None)
 
     def test_reqd_params_keys(self):
         valid_data_set = self.valid_data_set()
@@ -91,17 +105,41 @@ class ViewTests(TestCase):
 
     def test_resp_labels(self):
         valid_data_set = self.valid_data_set()
-        reqd_params_dict, app_error_dict = wfc2plot().get_reqd_params_dict(
-            valid_data_set
+
+        # case 1: test wild-type
+        valid_data_set1 = valid_data_set.copy()
+        reqd_params_dict1, app_error_dict1 = wfc2plot().get_reqd_params_dict(
+            valid_data_set1
         )
-        print("valid_data_set:", valid_data_set)
-        resp, labels, confidences, msg, app_error_dict = wfc2plot().get_resp_in_ndarray(
-            valid_data_set
+        (
+            resp1,
+            labels_1,
+            confidences,
+            msg,
+            app_error_dict,
+        ) = wfc2plot().get_resp_in_ndarray(valid_data_set1)
+        self.assertEqual(resp1.shape[0], 3)
+        self.assertEqual(resp1.shape[1], 1000)
+        self.assertEqual(len(labels_1), 3)
+        self.assertEqual(app_error_dict1, {})
+
+        # case 2: test unc-31
+        valid_data_set2 = valid_data_set.copy()
+        valid_data_set2["strain_type"] = "unc-31"
+        reqd_params_dict2, app_error_dict2 = wfc2plot().get_reqd_params_dict(
+            valid_data_set2
         )
-        self.assertEqual(resp.shape[0], 3)
-        self.assertEqual(resp.shape[1], 1000)
-        self.assertEqual(len(labels), 3)
-        self.assertEqual(app_error_dict, {})
+        (
+            resp2,
+            labels_2,
+            confidences,
+            msg,
+            app_error_dict,
+        ) = wfc2plot().get_resp_in_ndarray(valid_data_set2)
+        self.assertEqual(resp2.shape[0], 3)
+        self.assertEqual(resp2.shape[1], 1000)
+        self.assertEqual(len(labels_2), 3)
+        self.assertEqual(app_error_dict2, {})
 
     def test_get_url_to_params(self):
         valid_data_set = self.valid_data_set()
