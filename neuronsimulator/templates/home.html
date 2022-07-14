@@ -112,7 +112,7 @@
 <div id="intro">
     <!--Webpage introduction --> 
     {% if web_intro %}
-        <h4>{{ web_intro }}</h4>
+        <p>{{ web_intro | safe }}</p>
     {% endif %}
     <br>
 </div>
