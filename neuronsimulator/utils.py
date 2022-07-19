@@ -124,7 +124,7 @@ class WormfunconnToPlot:
         funatlas, app_error_dict = self.get_funatlas(strain_type)
         if funatlas:
             try:
-                neuron_id_list = funatlas.get_neuron_ids()
+                neuron_id_list = funatlas.get_neuron_ids(stim=True)
             except Exception as e:
                 neuron_id_list = []
                 app_error_dict["get_neuron_ids_error"] = e
@@ -313,9 +313,12 @@ class WormfunconnToPlot:
 
         # create colormap for n colors
         n_colors = len(labels)
-        colors = px.colors.sample_colorscale(
-            "rainbow", [n / (n_colors - 1) for n in range(n_colors)]
-        )
+        if n_colors >= 2:
+            colors = px.colors.sample_colorscale(
+                "rainbow", [n / (n_colors - 1) for n in range(n_colors)]
+            )
+        else:
+            colors = ["rgb(255, 0, 0)"]
 
         if resp.size > 0:
             stim_neu_id = params_dict["stim_neu_id"]

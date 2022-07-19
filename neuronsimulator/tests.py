@@ -176,3 +176,52 @@ class ViewTests(TestCase):
         form_opt_field_dict = wfc2plot().get_form_opt_field_dict()
         self.assertEqual(form_opt_field_dict["duration"]["stim_type"], "rectangular")
         self.assertEqual(form_opt_field_dict["duration"]["default"], 1.0)
+
+    def test_all_output(self):
+        valid_data_set = self.valid_data_set()
+
+        # case 1: test wild-type
+        valid_data_set1 = valid_data_set.copy()
+        out1 = wfc2plot().get_all_output_for_plot(valid_data_set1)
+        plot_div = out1.plot_div
+        url_query_string = out1.url_query_string
+        app_error_dict = out1.app_error_dict
+        exp_url_query_string = (
+            "strain_type=wild-type&stim_type=rectangular&stim_neu_id=FLPL"
+            "&resp_neu_ids=FLPL&resp_neu_ids=I4&resp_neu_ids=I6&nt=1000"
+            "&t_max=100&top_n=None&duration=1.0"
+        )
+        self.assertFalse(plot_div is None)
+        self.assertEqual(url_query_string, exp_url_query_string)
+        self.assertEqual(len(app_error_dict), 0)
+
+        # case 2: test unc-31
+        valid_data_set2 = valid_data_set.copy()
+        valid_data_set2["strain_type"] = "unc-31"
+        out2 = wfc2plot().get_all_output_for_plot(valid_data_set2)
+        plot_div = out2.plot_div
+        url_query_string = out2.url_query_string
+        app_error_dict = out2.app_error_dict
+        exp_url_query_string = (
+            "strain_type=unc-31&stim_type=rectangular&stim_neu_id=FLPL"
+            "&resp_neu_ids=FLPL&resp_neu_ids=I4&resp_neu_ids=I6&nt=1000"
+            "&t_max=100&top_n=None&duration=1.0"
+        )
+        self.assertFalse(plot_div is None)
+        self.assertEqual(url_query_string, exp_url_query_string)
+        self.assertEqual(len(app_error_dict), 0)
+
+        # case 3: test response neuron is the same as stimulated neuron
+        valid_data_set3 = valid_data_set.copy()
+        valid_data_set3["resp_neu_ids"] = ["FLPL"]
+        out3 = wfc2plot().get_all_output_for_plot(valid_data_set3)
+        plot_div = out3.plot_div
+        url_query_string = out3.url_query_string
+        app_error_dict = out3.app_error_dict
+        exp_url_query_string = (
+            "strain_type=wild-type&stim_type=rectangular&stim_neu_id=FLPL"
+            "&resp_neu_ids=FLPL&nt=1000&t_max=100&top_n=None&duration=1.0"
+        )
+        self.assertFalse(plot_div is None)
+        self.assertEqual(url_query_string, exp_url_query_string)
+        self.assertEqual(len(app_error_dict), 0)
