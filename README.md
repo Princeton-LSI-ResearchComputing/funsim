@@ -10,8 +10,7 @@ and the Prineeton Neuroscience Institute.
 
 This web-app allows you to simulate responses of downstream neurons to the
 stimulation of other neurons using the functional connectivity data measured by
-Randi et al. (2022), measured via simultaneous single-cell optogenetics and
-whole-brain imaging.
+[Randi et al. (2022)](https://doi.org/10.48550/arXiv.2208.04790), measured via simultaneous single-cell optogenetics and whole-brain imaging.
 
 To report a bug or feature request, open a new issue on
 [GitHub](https://github.com/PrincetonUniversity/neuron-simulator/issues). There you

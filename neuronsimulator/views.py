@@ -19,9 +19,6 @@ def home(request):
     # form_opt_field_dict = {}
     form_opt_field_init_dict = {}
 
-    # website introduction
-    web_intro = wfc.website_text["intro"]
-
     # get initial values for all form fields
     my_form = ParamForm()
     for k in my_form.fields.keys():
@@ -75,7 +72,6 @@ def home(request):
 
         # add all output to context
         context = {
-            "web_intro": web_intro,
             "form": my_form,
             "form_opt_field_init_dict": form_opt_field_init_dict,
             "opt_field_names": opt_field_names,
@@ -90,7 +86,6 @@ def home(request):
         # for invalid form, render valid form values in addition to form error(s)
         my_form = ParamForm(form_params)
         context = {
-            "web_intro": web_intro,
             "form": my_form,
             "form_opt_field_init_dict": form_opt_field_init_dict,
             "opt_field_names": opt_field_names,

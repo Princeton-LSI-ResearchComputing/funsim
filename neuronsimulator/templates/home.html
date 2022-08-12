@@ -110,12 +110,30 @@
 
 {% block content %}
 <div id="intro">
-    <!--Webpage introduction --> 
-    {% if web_intro %}
-        <p>{{ web_intro | safe }}</p>
-    {% endif %}
-    <br>
+    <!--Webpage introduction -->
+    <p>
+        This web-app allows you to simulate responses of downstream neurons to
+        the stimulation of other neurons using the functional connectivity data
+        measured by <a href="https://doi.org/10.48550/arXiv.2208.04790">Randi et al. (2022)</a>,
+        measured via simultaneous single-cell optogenetics and whole-brain imaging.
+    </p>
+    <p>
+        To start, select a neuron to be stimulated and the activity that you want
+        to be induced in that neuron (irrespectively of the method of stimulation).
+        The "realistic" activity type is an empirical representative activity transient
+        following a stimulus, whose shape and duration can be tuned with the two timescales.
+        Then select either the neurons whose responses you'd like to plot or the top n most
+        responsive neurons.
+    </p>
+    <p>
+        This web-app is an interface to the
+        <a href="https://www.github.com/leiferlab/worm-functional-connectivity">
+        Worm Functional Connectivity</a> python library that is available on Github.
+        At the bottom of the plot, you can obtain the code snippet to replicate the plot
+        on your computer.
+    </p>
 </div>
+<br>
 <div class="row" id="div0">
     <div class="col-sm-4" id="div1">
         {% if form %}
@@ -184,7 +202,7 @@
                         <div class="card card-body">
                             <p>Selecting one or multiple response neurons will automatically deselect top N value. 
                                 Entering a value for top N ans deselect all response neuron(s), top N responses will 
-                                be plotted. The default value for Top N is 0. Unselecting both response neurons and top N 
+                                be plotted. The default value for Top N is 10. Unselecting both response neurons and top N 
                                 will plot responses based on default threshold value.
                             </p>
                         </div>
