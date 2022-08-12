@@ -1,4 +1,3 @@
-import wormfunconn as wfc
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
