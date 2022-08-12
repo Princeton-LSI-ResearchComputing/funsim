@@ -1,7 +1,9 @@
+---
+
 name: Super-Linter
 
 # Run this workflow every time a new commit is pushed to your repository
-on: push
+"on": push
 
 jobs:
   # Set the job key. The key is displayed as the job name
@@ -25,5 +27,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: /
           IGNORE_GITIGNORED_FILES: true
-          FILTER_REGEX_EXCLUDE: (\.pylintrc|migrations|static\/bootstrap.*|static\/vanillaSelectBox.*)
-
+          FILTER_REGEX_EXCLUDE: (\.pylintrc|migrations|static\/bootstrap.*)

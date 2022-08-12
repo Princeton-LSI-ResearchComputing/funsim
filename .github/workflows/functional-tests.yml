@@ -1,6 +1,7 @@
-name: Functional Tests
+---
 
-on: [push]
+name: Functional Tests
+"on": [push]
 
 jobs:
   build:
@@ -10,20 +11,16 @@ jobs:
     env:
       SECRET_KEY: u9hw)&vt)bqb$7=8q7pb^m6tl696nm0rww$wdf9v0!j(r!4rzf
     steps:
-    - uses: actions/checkout@v1
-    - name: webfactory/ssh-agent
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.9
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Check makemigrations are complete
-      run: python manage.py makemigrations --check --dry-run
-    - name: Run tests
-      run: python manage.py test
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Check makemigrations are complete
+        run: python manage.py makemigrations --check --dry-run
+      - name: Run tests
+        run: python manage.py test
