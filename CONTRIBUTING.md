@@ -61,7 +61,7 @@ that are published to the repository.  We use environment variables to store
 configuration data.  This makes it possible to easily change between
 environments of a deployed application (see [The Twelve-Factor
 App](https://www.12factor.net/config)).  The .env file you create here is pre-
-configured to be ignored by the repo, so do not explicitly check it in.
+configured to be ignored by the repository, so do not explicitly check it in.
 
 Update the .env file to reflect the new secret key with a line start with "SECRET_KEY="
 SQlite is used for this project, so no database credentials are needed for configuration.
