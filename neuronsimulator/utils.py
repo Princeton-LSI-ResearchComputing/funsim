@@ -336,7 +336,7 @@ class WormfunconnToPlot:
                         mode="lines",
                         line=dict(color=colors[i], width=4),
                         opacity=confidences[i],
-                        name=labels[i] + " (confidence=" + str(confidences[i]) + ")",
+                        name=labels[i],
                         hovertemplate="(%{x},%{y})",
                     )
                 )
@@ -346,7 +346,7 @@ class WormfunconnToPlot:
                 "title": f"Plot: Neural Responses to Stimulated Neuron ({stim_neu_id})",
                 "xaxis_title": "Time (s)",
                 "yaxis_title": "Neural Response",
-                "legend_title_text": "Responding Neuron (rank) (confidence value)",
+                "legend_title_text": "Responding Neuron (rank)",
                 "showlegend": True,
                 "height": 800,
                 "width": 1200,
