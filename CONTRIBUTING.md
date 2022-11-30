@@ -63,7 +63,12 @@ environments of a deployed application (see [The Twelve-Factor
 App](https://www.12factor.net/config)).  The .env file you create here is pre-
 configured to be ignored by the repository, so do not explicitly check it in.
 
-Update the .env file to reflect the new secret key with a line start with "SECRET_KEY="
+Copy the NeuroSimulator environment example:
+
+    cp config/.env.example config/.env
+
+Update the .env file to reflect the new secret key (append the key to "SECRET_KEY=")
+
 SQlite is used for this project, so no database credentials are needed for configuration.
 
 ### Start NeuroSimulator
