@@ -105,6 +105,16 @@
             $('#id_resp_neu_ids').selectpicker('refresh');
             $('#id_resp_neu_ids').selectpicker('deselectAll');
         }
+
+        function reset_form() {
+            let text = "Are you sure you want to discard selected parameters for plotting and start over?"
+            if (confirm(text) == true) {
+                window.location = window.location.pathname
+            }
+            else {
+                return None;
+            }
+        }
     </script>
 {% endblock %}
 
@@ -166,7 +176,7 @@
                 <br>
                 <!--render the fields manually and set display for each field based on inital stim_type-->
                 <div id="div_stim_neu_id" style="display:block">
-                    <label>{{ form.stim_neu_id.label }}</label>
+                    <label class="fw-bold text-danger">{{ form.stim_neu_id.label }}</label>
                     {{ form.stim_neu_id.errors }}
                     {{ form.stim_neu_id }}
                 </div>
@@ -178,7 +188,16 @@
                     {{ form.stim_type }}
                 </div>
                 <br>
-                <p>Activity waveform temporal shape</p>
+                <p>Activity waveform temporal shape
+                <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#waveform_helptext"></i>
+                </p>
+                    <div class="collapse" id="waveform_helptext">
+                        <div class="card card-body">
+                            <p>For "realistic" activity type, timescale 1 and 2 are the timescales of
+                                the two decaying exponentials whose difference is the activity waveform.
+                            </p>
+                        </div>
+                    </div>
                 <!-- optional fields-->
                 {% for field in form.visible_fields %}
                     {% if field.name in opt_field_names %}
@@ -195,7 +214,7 @@
                 {% endfor %}
                 <!--responding neurons-->
                 <br>
-                <p> Select neurons to measure:
+                <p> Select neurons to plot:
                 <i class="far fa-question-circle" data-bs-toggle="collapse" data-bs-target="#id_resp_helptext"></i>
                 </p>
                     <div class="collapse" id="id_resp_helptext">
@@ -212,7 +231,7 @@
                     {{ form.resp_neu_ids.errors }}
                     {{ form.resp_neu_ids }}
                 </div>
-                <br>
+                <p class="fw-bold text-danger">or</p>
                 <div id="div_top_n">
                     <label>{{ form.top_n.label }}</label>
                     {{ form.top_n.errors }}
@@ -232,8 +251,8 @@
                 <div class="row">
                     <div class="col">
                         <input id="button_startover" style="display:block" type="button"
-                            onclick="window.location = window.location.pathname"
-                            value="Start Over" class="btn btn-outline-primary">
+                            onclick="reset_form()"
+                            value="Clear All" class="btn btn-outline-primary">
                     </div>
                     <div class="col">
                         <input id="button_submit" style="display:block" type="submit"

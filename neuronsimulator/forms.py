@@ -36,7 +36,7 @@ class ParamForm(forms.Form):
         initial=10,
         label="Top N most responsive",
         required=False,
-        help_text="If not None, return top N responses with the largest absolute peak amplitude",
+        help_text="If not None, return top N responses with the largest absolute peak amplitude.",
         widget=forms.NumberInput(attrs={"min": 0}),
     )
     nt = forms.IntegerField(
@@ -47,7 +47,7 @@ class ParamForm(forms.Form):
     )
     t_max = forms.FloatField(
         initial=100,
-        label="Simulation duration (s)",
+        label="Time window to plot (s)",
         validators=[MinValueValidator(0.1)],
     )
     # optional fields based on stim_types
@@ -105,7 +105,7 @@ class ParamForm(forms.Form):
 
         self.fields["resp_neu_ids"] = forms.MultipleChoiceField(
             choices=neuron_choices,
-            label="Responding neurons",
+            label="Hand selected neurons",
             required=False,
             widget=forms.SelectMultiple(
                 attrs={
