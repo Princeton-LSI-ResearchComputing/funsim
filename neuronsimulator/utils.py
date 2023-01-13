@@ -329,12 +329,18 @@ class WormfunconnToPlot:
             for i in range(len(labels)):
                 y_data = y_data_set[..., i]
                 # adding scatter plot of each set of y_data vs. x_data
+                # plot trace: dish line for stimulated neuron; solid line for other selected neurons
+                resp_neu_id = labels[i].split()[0]
+                if resp_neu_id == stim_neu_id:
+                    line_attr_dict = dict(dash="dash", color=colors[i], width=6)
+                else:
+                    line_attr_dict = dict(dash="solid", color=colors[i], width=4)
                 graphs.append(
                     go.Scatter(
                         x=x_data,
                         y=y_data,
                         mode="lines",
-                        line=dict(color=colors[i], width=4),
+                        line=line_attr_dict,
                         opacity=confidences[i],
                         name=labels[i],
                         hovertemplate="(%{x},%{y})",
