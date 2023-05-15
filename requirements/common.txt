@@ -2,8 +2,10 @@ Django==3.2.19
 django-environ==0.4.5
 django-validators==1.0.1
 numpy==1.24.3
-pyproject-toml==0.0.10
 matplotlib==3.7.1
 plotly==5.7.0
 pandas==1.4.2
 scipy==1.10.1
+# Commented out and installed afterwards in `functional-tests.yml`
+# Uncomment when https://github.com/leiferlab/worm-functional-connectivity/issues/11 is resolved
+# git+https://github.com/leiferlab/worm-functional-connectivity@f3bc8c52accd8cf8e5b8065f79f159421291c558

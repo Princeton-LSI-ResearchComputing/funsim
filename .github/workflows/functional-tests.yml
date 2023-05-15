@@ -11,15 +11,18 @@ jobs:
     env:
       SECRET_KEY: u9hw)&vt)bqb$7=8q7pb^m6tl696nm0rww$wdf9v0!j(r!4rzf
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip wheel
+          python -m pip install -r requirements.txt
+      - name: Install worm-functional-connectivity
+        run: python -m pip install --no-build-isolation -r requirements/common2.txt
       - name: Check makemigrations are complete
         run: python manage.py makemigrations --check --dry-run
       - name: Run tests
