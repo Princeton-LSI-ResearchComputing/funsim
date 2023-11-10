@@ -76,16 +76,11 @@ class ParamForm(forms.Form):
             try:
                 strain_type = self.data.get("strain_type")
                 neuron_ids, app_error_dict = wfc2plot().get_neuron_ids(strain_type)
-                # TODO: remove the following two lines when the dataset is ready
-                # if strain_type == "unc-31":
-                #    neuron_ids = neuron_ids[:5]
             except (ValueError, TypeError):
                 neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild-type")
 
         neuron_choices = [
             (neu_id, neu_id)
-            # TODO: remove the following line during final code cleanup
-            # for neu_id in Neuron.objects.all().values_list("name", flat=True)
             for neu_id in neuron_ids
         ]
 
