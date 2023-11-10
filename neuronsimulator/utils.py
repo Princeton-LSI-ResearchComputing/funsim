@@ -89,9 +89,6 @@ class WormfunconnToPlot:
         self.strain_type = strain_type
         # Get atlas folder and file name
         folder = os.path.join(settings.MEDIA_ROOT, "atlas/")
-        # TODO: need to change the file names when the dtaasets are ready
-        # use mock file based on strain type
-        # the file names may change later
         if strain_type == "wild-type":
             fname = "wild-type.pickle"
         elif strain_type == "unc-31":
@@ -382,13 +379,6 @@ class WormfunconnToPlot:
         self.reqd_params_dict = params_dict
         reqd_params_dict, app_error_dict = self.get_reqd_params_dict(params_dict)
         if reqd_params_dict:
-            """
-            filtered_params_dict = {
-                k: v for (k, v) in reqd_params_dict.items() if v is not None
-            }
-            try:
-                url_query_string = urlencode(filtered_params_dict, doseq=True)
-            """
             try:
                 url_query_string = urlencode(reqd_params_dict, doseq=True)
             except Exception as e:

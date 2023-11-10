@@ -5,23 +5,26 @@
 <nav class="navbar navbar-expand-md navbar-light" style="background-color: #eee8c0cb;">
     <div class="container-fluid">
         <a class="navbar-brand" href="{% url 'home' %}">
-            <img src="{% static 'images/logo.png' %}" alt="Icahn Laboratory" width="30" height="24">
-           FunSim (Beta) 
+            <img src="{% static 'images/logo1.png' %}" alt="Icahn Laboratory" width="40" height="40">
+           FunSim
         </a>
 
         <ul class="navbar-nav me-auto">
             <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Home</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="https://github.com/leiferlab/worm-functional-connectivity#readme">Help</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="https://github.com/leiferlab/worm-functional-connectivity">Python Software Library</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="https://funconn.princeton.edu/">FunCoNN</a>
-            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarLinks" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Links
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarLinks">
+                  <li><a class="dropdown-item" href="https://elegans.princeton.edu/">Leifer Lab Tools</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="https://github.com/Princeton-LSI-ResearchComputing/funsim">FunSim@GitHub</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="https://github.com/leiferlab/worm-functional-connectivity">Worm Functional Connectivity</a></li>
+                </ul>
+              </li>
         </ul>
     </div>
 </nav>
