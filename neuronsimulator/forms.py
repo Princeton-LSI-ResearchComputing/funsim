@@ -79,10 +79,7 @@ class ParamForm(forms.Form):
             except (ValueError, TypeError):
                 neuron_ids, app_error_dict = wfc2plot().get_neuron_ids("wild-type")
 
-        neuron_choices = [
-            (neu_id, neu_id)
-            for neu_id in neuron_ids
-        ]
+        neuron_choices = [(neu_id, neu_id) for neu_id in neuron_ids]
 
         self.fields["stim_neu_id"] = forms.ChoiceField(
             choices=neuron_choices,
