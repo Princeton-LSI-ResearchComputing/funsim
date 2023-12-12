@@ -105,6 +105,7 @@ class ParamForm(forms.Form):
                     "data-live-search": "true",
                     "data-width": "fit",
                     "data-actions-box": "true",
+                    "data-selected-text-format": "count > 12",
                     "title": "Choose neurons a priori",
                 }
             ),
