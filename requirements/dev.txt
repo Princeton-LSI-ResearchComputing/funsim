@@ -1,9 +1,11 @@
 # Specifies only dev-specific requirements
+# for each linter, better to use the version listed in super-linter dependencies
+# ref: https://github.com/super-linter/super-linter/tree/main/dependencies/python
 # But imports the common ones too
 -r common.txt
-flake8==4.0.1
-black==22.3.0
-isort==5.10.1
-pylint==2.13.4
-mypy==0.942
-mypy-extensions==0.4.3
+flake8==7.0.0
+black==24.3.0
+isort==5.13.2
+pylint==3.1.0
+mypy==1.9.0
+#mypy-extensions==0.4.3
