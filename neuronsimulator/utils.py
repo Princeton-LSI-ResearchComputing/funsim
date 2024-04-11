@@ -71,9 +71,9 @@ class WormfunconnToPlot:
                 range_val = str(field_kwarg["range"])
                 min_val = field_kwarg["range"][0]
                 max_val = field_kwarg["range"][1]
-                field_attrs[
-                    "help_text"
-                ] = f"Values for {label}: default={default_val}; range: {range_val}"
+                field_attrs["help_text"] = (
+                    f"Values for {label}: default={default_val}; range: {range_val}"
+                )
                 field_attrs["min_val"] = min_val
                 field_attrs["max_val"] = max_val
                 field_attrs["step"] = 1
@@ -188,9 +188,9 @@ class WormfunconnToPlot:
                 reqd_params_keys = self.get_reqd_params_keys(stim_type)
                 reqd_params_dict = {key: params_dict[key] for key in reqd_params_keys}
             else:
-                app_error_dict[
-                    "input_parameter_error"
-                ] = f"undefined stim_type:{stim_type}."
+                app_error_dict["input_parameter_error"] = (
+                    f"undefined stim_type:{stim_type}."
+                )
         else:
             app_error_dict["input_parameter_error"] = "input is not a dictionary."
         return reqd_params_dict, app_error_dict
