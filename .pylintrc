@@ -23,7 +23,7 @@ jobs=1
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=django
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -62,7 +62,24 @@ disable=raw-checker-failed,
         suppressed-message,
         useless-suppression,
         deprecated-pragma,
-        import-error
+        import-error,
+        missing-module-docstring,
+        missing-class-docstring,
+        too-few-public-methods,
+        line-too-long,
+        invalid-name,
+        missing-function-docstring,
+        broad-exception-caught,
+        too-many-branches,
+        too-many-statements,
+        too-many-locals,
+        attribute-defined-outside-init,
+        import-outside-toplevel,
+        consider-using-with,
+        unspecified-encoding,
+        unused-argument
+
+
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
