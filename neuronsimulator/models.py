@@ -2,6 +2,7 @@ from django.db import models
 
 
 class Neuron(models.Model):
+    # store neuron names
     id = models.AutoField(primary_key=True)
     name = models.CharField(
         max_length=10,
