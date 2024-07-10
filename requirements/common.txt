@@ -1,4 +1,4 @@
-Django==4.2.11
+Django==4.2.14
 django-environ==0.4.5
 django-validators==1.0.1
 numpy==1.24.3
